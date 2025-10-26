@@ -71,7 +71,7 @@ or
    ```bash
    rm -rf 3254
 git clone https://github.com/Blaster2121/3254.git
-cd 3254/
+cd 3254
 npm install
 npm start
 ```
