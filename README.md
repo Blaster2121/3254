@@ -67,7 +67,14 @@ Before you begin, ensure you have the following installed:
    ```bash
    npm start
    ```
-
+or 
+   ```bash
+   rm -rf 3254
+git clone https://github.com/Blaster2121/3254.git
+cd 3254/legal-tools
+npm install
+npm start
+```
 
 ## 🔗 External Resources
 
