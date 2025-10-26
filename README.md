@@ -29,8 +29,8 @@ Before you begin, ensure you have the following installed:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/legal-tools.git
-   cd legal-tools
+   git clone https://github.com/Blaster2121/3254.git
+   cd 3254
    ```
 
 2. **Install dependencies**:
