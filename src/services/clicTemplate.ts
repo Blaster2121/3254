@@ -49,7 +49,7 @@ export interface CLICLeaseData {
   
   // Furniture
   furnitureProvided: boolean
-  furnitureList: string
+  furnitureList: string // FIXME should be in list
   
   // Early Termination
   hasEarlyTermination: boolean

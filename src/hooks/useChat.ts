@@ -49,7 +49,7 @@ export const useChat = () => {
 
           // Generate analysis result based on POE response
           const analysis: ResultData = {
-            summary: poeResponse.message.substring(0, 500) + (poeResponse.message.length > 500 ? '...' : ''),
+            summary: poeResponse.message,
             keyPoints: extractKeyPoints(poeResponse.message),
             documentReferences: extractReferences(poeResponse.message),
             recommendations: extractRecommendations(poeResponse.message),

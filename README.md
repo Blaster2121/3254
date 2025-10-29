@@ -76,6 +76,59 @@ npm install
 npm start
 ```
 
+## 🖥️ Backend Server Setup
+
+The backend server handles POE bot integration and must be running for the legal chat functionality to work.
+
+1. **Navigate to the server directory**:
+   ```bash
+   cd server
+   ```
+
+2. **Install backend dependencies**:
+   ```bash
+   npm install
+   ```
+   
+   **Note**: This will automatically install Playwright browsers during the postinstall step, which may take a few minutes.
+
+3. **Set up environment variables**:
+   
+   Create a `.env` file in the `server` directory:
+   ```bash
+   touch .env
+   ```
+   
+   Add the following environment variables to `.env`:
+   ```env
+   PORT=4000
+   POE_COOKIE_STRING=your_poe_cookie_string_here
+   POE_BOT_PATH=/Doccie
+   ```
+   
+   **Important**: 
+   - `POE_COOKIE_STRING` is required for the backend to authenticate with Poe. You can get this from your browser's cookies when logged into poe.com.
+   - `PORT` is optional (defaults to 4000 if not specified)
+   - `POE_BOT_PATH` is optional (defaults to `/Doccie` if not specified)
+
+4. **Start the backend server**:
+   ```bash
+   npm start
+   ```
+   
+   Or for development mode:
+   ```bash
+   npm run dev
+   ```
+   
+   The server will start on `http://localhost:4000` by default.
+
+5. **Verify the backend is running**:
+   - You should see console output indicating the server is listening on port 4000
+   - If `POE_COOKIE_STRING` is not set, you'll see a warning message, but the server will still start
+
+**Note**: Both the frontend (port 3000) and backend (port 4000) servers need to be running simultaneously for the full application to work.
+
 ## 🔗 External Resources
 
 - **POE Bot for Lease Analysis**: [https://poe.com/Lease_Risks](https://poe.com/Lease_Risks)

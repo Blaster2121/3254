@@ -4,6 +4,9 @@ import dotenv from 'dotenv'
 import { chromium } from 'playwright'
 import { exec as _exec } from 'child_process'
 import { promisify } from 'util'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
 
 const exec = promisify(_exec)
 
@@ -195,57 +198,32 @@ app.post('/api/poe/ask', async (req, res) => {
     // Wait for bot reply to appear and settle
     await page.waitForTimeout(30000) // FIXME Wait 30 seconds for response
 
-    // Extract the Doccie response using specific DOM selectors
+    // Extract the latest Doccie response using targeted selectors
     const doccieResponse = await page.evaluate(() => {
-      // Look for the message content in the chat
-      const messageSelectors = [
-        '.Message_messageContent__nBPq7', // Main message content
-        '[class*="MessageContent"]', // Alternative message content
-        '.MarkdownRenderer_root__BepcK', // Markdown content
-        '[class*="MarkdownRenderer"]', // Alternative markdown
-        '.Message_messageContainer__nBPq7', // Message container
-        '[class*="MessageContainer"]' // Alternative container
+      console.log('Starting targeted extraction...')
+      
+      // Target the specific ChatMessage elements that contain Doccie responses
+      const chatMessageSelectors = [
+        '.ChatMessage_chatMessage__xkgHx', // Main chat message container
+        '.ChatMessage_messageRow__DHlnq',  // Message row
+        '.ChatMessage_messageWrapper__4Ugd6' // Message wrapper (not rightSide)
       ]
       
-      let bestContent = ''
-      let bestLength = 0
-      
-      for (const selector of messageSelectors) {
+      // Look for ChatMessage elements that contain Doccie responses
+      for (const selector of chatMessageSelectors) {
         const elements = document.querySelectorAll(selector)
         console.log(`Found ${elements.length} elements with selector: ${selector}`)
         
         for (const element of elements) {
           const text = element.textContent || ''
-          // Look for content that contains legal advice patterns
-          if (text.includes('lease') && text.includes('tenant') && text.includes('Hong Kong') && text.length > 500) {
-            console.log(`Found potential content with selector ${selector}, length: ${text.length}`)
-            if (text.length > bestLength) {
-              bestLength = text.length
-              bestContent = text
-            }
-          }
+          
         }
       }
-      
-      // If no specific selectors worked, try to find the latest message
-      if (!bestContent) {
-        console.log('No specific content found, trying general approach...')
-        const allDivs = document.querySelectorAll('div')
-        for (const div of allDivs) {
-          const text = div.textContent || ''
-          if (text.includes('A lease is a legally binding agreement') && text.length > 1000) {
-            console.log('Found content with general approach, length:', text.length)
-            bestContent = text
-            break
-          }
-        }
-      }
-      
       return bestContent
     })
     
     console.log('[POE] Extracted Doccie response length:', doccieResponse.length)
-    console.log('[POE] Extracted Doccie response:', doccieResponse)
+    console.log('[POE] Extracted Doccie response preview:', doccieResponse.substring(0, 200) + '...')
     
     const reply = doccieResponse || 'No response content found'
 
@@ -263,6 +241,31 @@ app.post('/api/poe/ask', async (req, res) => {
 })
 
 app.get('/health', (_req, res) => res.json({ ok: true }))
+
+// Compile LaTeX to PDF and stream it back without persisting
+app.post('/api/pdf/generate', async (req, res) => {
+  const { latex, filename = 'Tenancy_Agreement' } = req.body || {}
+  if (!latex || typeof latex !== 'string') {
+    return res.status(400).json({ error: 'latex is required' })
+  }
+  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'latex-'))
+  const texPath = path.join(tmpDir, `${filename}.tex`)
+  const pdfPath = path.join(tmpDir, `${filename}.pdf`)
+  try {
+    await fs.promises.writeFile(texPath, latex, 'utf8')
+    await exec(`pdflatex -interaction=nonstopmode -halt-on-error -output-directory ${tmpDir} ${texPath}`)
+    const pdf = await fs.promises.readFile(pdfPath)
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}.pdf"`)
+    res.send(pdf)
+  } catch (e) {
+    console.error('[PDF] Error:', e)
+    res.status(500).json({ error: e instanceof Error ? e.message : 'Unknown error' })
+  } finally {
+    // Best-effort cleanup
+    try { await fs.promises.rm(tmpDir, { recursive: true, force: true }) } catch {}
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`Poe backend listening on port ${PORT}. Target bot: ${POE_URL}`)

@@ -30,7 +30,8 @@
     "eject": "react-scripts eject",
     "setup": "npm install",
     "dev": "npm start",
-    "clean": "rm -rf node_modules package-lock.json && npm install"
+    "clean": "rm -rf node_modules package-lock.json && npm install",
+    "tex:pdf": "bash toPdf.sh"
   },
   "eslintConfig": {
     "extends": [
