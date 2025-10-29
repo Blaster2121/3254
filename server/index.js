@@ -199,7 +199,7 @@ app.post('/api/poe/ask', async (req, res) => {
     await page.waitForTimeout(30000) // FIXME Wait 30 seconds for response
 
     // Extract the latest Doccie response using targeted selectors
-    const doccieResponse = await page.evaluate(() => {
+    const doccieResponse = await page.evaluate((userMessage) => {
       console.log('Starting targeted extraction...')
       
       // Target the specific ChatMessage elements that contain Doccie responses
@@ -209,6 +209,9 @@ app.post('/api/poe/ask', async (req, res) => {
         '.ChatMessage_messageWrapper__4Ugd6' // Message wrapper (not rightSide)
       ]
       
+      let bestContent = ''
+      const userMsgLower = userMessage.trim().toLowerCase()
+      
       // Look for ChatMessage elements that contain Doccie responses
       for (const selector of chatMessageSelectors) {
         const elements = document.querySelectorAll(selector)
@@ -216,14 +219,57 @@ app.post('/api/poe/ask', async (req, res) => {
         
         for (const element of elements) {
           const text = element.textContent || ''
+          const textLower = text.trim().toLowerCase()
           
+          if (textLower.includes(userMsgLower)) {
+            continue
+          }
+          
+          const isRightSide = element.closest('.ChatMessage_messageWrapper__4Ugd6.rightSide') !== null
+          if (isRightSide) {
+            continue
+          }
+          
+          if (text.length > bestContent.length && text.trim().length > 0) {
+            bestContent = text.trim()
+          }
         }
       }
-      return bestContent
-    })
+      
+      // Fallback: try to find any bot response by looking at message structure
+      if (!bestContent) {
+        const allMessages = document.querySelectorAll('[class*="Message"], [class*="message"]')
+        const responses = []
+        
+        for (const msg of allMessages) {
+          const text = msg.textContent || ''
+          if (text.trim().length > 0 && !text.toLowerCase().includes(userMsgLower)) {
+            // Check if it's not a user message
+            const isUserMessage = msg.closest('[class*="rightSide"]') !== null || 
+                                 msg.closest('[class*="user"]') !== null ||
+                                 msg.querySelector('[class*="Avatar"][class*="user"]') !== null
+            
+            if (!isUserMessage && text.trim().length > 10) {
+              responses.push(text.trim())
+            }
+          }
+        }
+        
+        // Get the most recent (last) response
+        if (responses.length > 0) {
+          bestContent = responses[responses.length - 1]
+        }
+      }
+      
+      return bestContent || ''
+    }, message)
     
-    console.log('[POE] Extracted Doccie response length:', doccieResponse.length)
-    console.log('[POE] Extracted Doccie response preview:', doccieResponse.substring(0, 200) + '...')
+    console.log('[POE] Extracted Doccie response length:', doccieResponse?.length || 0)
+    if (doccieResponse) {
+      console.log('[POE] Extracted Doccie response preview:', doccieResponse.substring(0, 200) + (doccieResponse.length > 200 ? '...' : ''))
+    } else {
+      console.log('[POE] No response content found')
+    }
     
     const reply = doccieResponse || 'No response content found'
 
