@@ -40,14 +40,11 @@ app.post('/api/poe/ask', async (req, res) => {
   // Prevent duplicate requests
   const requestId = `${Date.now()}-${Math.random()}`
   if (activeRequests.size > 0) {
-    console.log('[POE] Request already in progress, rejecting duplicate')
     return res.status(429).json({ error: 'Request already in progress' })
   }
   activeRequests.add(requestId)
 
   const targetUrl = `https://poe.com${botPath || POE_BOT_PATH}`
-  console.log('[POE] Incoming message preview:', message.slice(0, 120))
-  console.log('[POE] Target URL:', targetUrl)
 
   let browser
   try {
@@ -69,19 +66,23 @@ app.post('/api/poe/ask', async (req, res) => {
       }
     }
     const context = await browser.newContext()
-    // Set cookies from POE_COOKIE_STRING
-    const cookies = POE_COOKIE_STRING.split(';').map(p => p.trim()).filter(Boolean)
-    await context.addCookies(cookies.map(c => {
-      const [name, ...rest] = c.split('=')
-      return {
-        name,
-        value: rest.join('='),
-        domain: 'poe.com',
-        path: '/',
-        httpOnly: false,
-        secure: true
-      }
-    }))
+    // Prefer header cookies over env cookies
+    const headerCookieString = typeof req.headers['x-poe-cookies'] === 'string' ? req.headers['x-poe-cookies'] : ''
+    const cookieSource = headerCookieString && headerCookieString.trim().length ? headerCookieString : POE_COOKIE_STRING
+    const cookies = cookieSource.split(';').map(p => p.trim()).filter(Boolean)
+    if (cookies.length) {
+      await context.addCookies(cookies.map(c => {
+        const [name, ...rest] = c.split('=')
+        return {
+          name,
+          value: rest.join('='),
+          domain: 'poe.com',
+          path: '/',
+          httpOnly: false,
+          secure: true
+        }
+      }))
+    }
 
     const page = await context.newPage()
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45000 })
@@ -170,7 +171,6 @@ app.post('/api/poe/ask', async (req, res) => {
         const btn = await page.$(sel)
         if (btn) {
           await btn.click().catch(() => {})
-          console.log('[POE] Clicked send button selector:', sel)
           break
         }
       }
@@ -200,13 +200,12 @@ app.post('/api/poe/ask', async (req, res) => {
 
     // Extract the latest Doccie response using targeted selectors
     const doccieResponse = await page.evaluate((userMessage) => {
-      console.log('Starting targeted extraction...')
       
       // Target the specific ChatMessage elements that contain Doccie responses
       const chatMessageSelectors = [
         '.ChatMessage_chatMessage__xkgHx', // Main chat message container
         '.ChatMessage_messageRow__DHlnq',  // Message row
-        '.ChatMessage_messageWrapper__4Ugd6' // Message wrapper (not rightSide)
+        '.ChatMessage_messageWrapper__4Ugd6' // Message wrapper
       ]
       
       let bestContent = ''
@@ -311,6 +310,18 @@ app.post('/api/pdf/generate', async (req, res) => {
     // Best-effort cleanup
     try { await fs.promises.rm(tmpDir, { recursive: true, force: true }) } catch {}
   }
+})
+
+// Lightweight auth status endpoint for frontend
+app.get('/api/poe/status', (req, res) => {
+  const headerCookies = req.headers['x-poe-cookies']
+  if (typeof headerCookies === 'string' && headerCookies.trim().length > 0) {
+    return res.json({ authenticated: true, loginInProgress: false, source: 'session' })
+  }
+  if (POE_COOKIE_STRING && POE_COOKIE_STRING.trim().length > 0) {
+    return res.json({ authenticated: true, loginInProgress: false, source: 'environment' })
+  }
+  return res.json({ authenticated: false, loginInProgress: false, source: 'none' })
 })
 
 app.listen(PORT, () => {

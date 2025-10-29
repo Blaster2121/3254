@@ -35,6 +35,35 @@ export interface LegalQueryContext {
   previousMessages?: POEMessage[]
 }
 
+// Local helper to read cookies stored by the app
+const getPOECookies = (): string | null => {
+  try {
+    return localStorage.getItem('poe_cookies')
+  } catch {
+    return null
+  }
+}
+
+// Stable bot path handling within a page session
+export const defaultBotPath = process.env.REACT_APP_POE_DEFAULT_BOT_PATH || '/Doccie'
+export const getCurrentBotPath = (): string => {
+  try {
+    const stored = sessionStorage.getItem('poe_bot_path')
+    if (stored && stored.trim()) {
+      return stored.startsWith('/') ? stored : `/${stored}`
+    }
+    return defaultBotPath
+  } catch {
+    return defaultBotPath
+  }
+}
+export const setCurrentBotPath = (path: string): void => {
+  try {
+    const normalized = path && path.startsWith('/') ? path : `/${path || ''}`
+    sessionStorage.setItem('poe_bot_path', normalized)
+  } catch {}
+}
+
 class POEService {
   private config: POEConfig
 
@@ -92,7 +121,7 @@ Instructions:
       prompt += `
 Document Analysis:
 - Document Name: ${context.uploadedPDF.name}
-- Document Content: ${context.uploadedPDF.text.substring(0, 2000)}...
+- Document Content: ${context.uploadedPDF.text}
 
 Please analyze this document in relation to the user's query and provide specific insights.
 `
@@ -118,10 +147,22 @@ ${context.previousMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')}
     if (!this.config.backendUrl) {
       throw new Error('BACKEND_NOT_CONFIGURED')
     }
+    // Ensure stable bot across requests in this page session
+    if (!sessionStorage.getItem('poe_bot_path')) {
+      setCurrentBotPath(defaultBotPath)
+    }
+    const botPath = getCurrentBotPath()
+
+    const headers: HeadersInit = { 'Content-Type': 'application/json' }
+    const cookies = getPOECookies()
+    if (cookies) {
+      headers['x-poe-cookies'] = cookies
+    }
+
     const resp = await fetch(this.config.backendUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: prompt })
+      headers,
+      body: JSON.stringify({ message: prompt, botPath })
     })
     if (!resp.ok) {
       const text = await resp.text()

@@ -10,6 +10,14 @@ interface ResultsPanelProps {
 }
 
 const ResultsPanel: React.FC<ResultsPanelProps> = ({ analysisResult, uploadedPDF, leaseAnalysis }) => {
+  const formatDisplayContent = (text: string): string => {
+    if (!text) return text
+    let out = text
+    out = out.replace(/^Doccie\s+/, '[Doccie] ')
+    out = out.replace(/\s*(?:[|·]\s*)?View\s+sources\s*(?=(\d{1,2}:\d{2}\s?(AM|PM))\s*$)/i, '')
+    out = out.replace(/(\d{1,2}:\d{2}\s?(AM|PM|上午|下午))$/i, '[$1]')
+    return out
+  }
   return (
     <div className="results-panel">
       <div className="results-header">
@@ -68,7 +76,7 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ analysisResult, uploadedPDF
                         hr: () => <hr style={{border: 'none', borderTop: '2px solid #e9ecef', margin: '1.5em 0'}} />
                       }}
                     >
-                      {analysisResult.fullResponse}
+                      {formatDisplayContent(analysisResult.fullResponse)}
                     </ReactMarkdown>
                   </div>
                 </div>

@@ -12,6 +12,16 @@ export const useChat = () => {
   })
   const [analysisResult, setAnalysisResult] = useState<ResultData | null>(null)
   const [uploadedPDF, setUploadedPDF] = useState<UploadedPDF | null>(null)
+  // Lightweight auth UI state
+  const getLocalCookies = (): string | null => {
+    try { return localStorage.getItem('poe_cookies') } catch { return null }
+  }
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!getLocalCookies())
+  const [authSource, setAuthSource] = useState<'environment' | 'session' | 'none'>(getLocalCookies() ? 'session' : 'none')
+  const [showAuthPanel, setShowAuthPanel] = useState<boolean>(!isAuthenticated)
+  const [authExpanded, setAuthExpanded] = useState<boolean>(false)
+  const [userForcedAuthPanel, setUserForcedAuthPanel] = useState<boolean>(false)
+  const [manualCookies, setManualCookies] = useState<string>('')
   
   // Initialize POE service
   const poeService = createPOEService(defaultPOEConfig)
@@ -170,6 +180,105 @@ For detailed lease risk analysis, please visit our specialized POE bot: https://
     setChatState(prev => ({ ...prev, error: null }))
   }
 
+  // Auth UI handlers
+  const toggleAuthExpanded = () => setAuthExpanded(prev => !prev)
+  const openPoeSite = () => {
+    const url = 'https://poe.com/Doccie'
+    try { window.open(url, '_blank') } catch { window.location.href = url }
+  }
+  const submitManualCookies = () => {
+    const value = manualCookies.trim()
+    if (!value || !value.includes('=')) {
+      setChatState({ isLoading: false, error: 'Please paste a valid Cookie string.' })
+      return
+    }
+    try { localStorage.setItem('poe_cookies', value) } catch {}
+    setIsAuthenticated(true)
+    setAuthSource('session')
+    setShowAuthPanel(false)
+    setAuthExpanded(false)
+    setManualCookies('')
+    // Let the user know
+    const msg: Message = { role: 'assistant', content: '✓ Authentication successful. Cookies saved to your browser.' }
+    setMessages(prev => [...prev, msg])
+  }
+  const clearAuthentication = () => {
+    try { localStorage.removeItem('poe_cookies') } catch {}
+    setIsAuthenticated(false)
+    setAuthSource('none')
+    setShowAuthPanel(true)
+  }
+  // Refresh authentication: prioritize manual cookies; if present, show as authenticated
+  const refreshAuthentication = async () => {
+    const local = getLocalCookies()
+    if (local) {
+      setIsAuthenticated(true)
+      setAuthSource('session')
+      setShowAuthPanel(false)
+      return
+    }
+    try {
+      const backendUrl = defaultPOEConfig.backendUrl || 'http://localhost:4000/api/poe/ask'
+      const baseUrl = backendUrl.replace('/api/poe/ask', '')
+      const res = await fetch(`${baseUrl}/api/poe/status`)
+      if (res.ok) {
+        const status = await res.json()
+        setIsAuthenticated(!!status.authenticated)
+        setAuthSource(status.source || 'none')
+        setShowAuthPanel(!status.authenticated)
+      } else {
+        setIsAuthenticated(false)
+        setAuthSource('none')
+        setShowAuthPanel(true)
+      }
+    } catch {
+      setIsAuthenticated(false)
+      setAuthSource('none')
+      setShowAuthPanel(true)
+    }
+  }
+  const closeAuthPanel = () => {
+    setShowAuthPanel(false)
+  }
+  const openAuthPanel = () => {
+    setUserForcedAuthPanel(true)
+    setShowAuthPanel(true)
+  }
+
+  // On mount, check backend auth status to detect environment cookies
+  // If environment-based, mark authenticated and keep panel visible but collapsible
+  ;(async () => {
+    try {
+      const backendUrl = defaultPOEConfig.backendUrl || 'http://localhost:4000/api/poe/ask'
+      const baseUrl = backendUrl.replace('/api/poe/ask', '')
+      const res = await fetch(`${baseUrl}/api/poe/status`)
+      if (res.ok) {
+        const status = await res.json()
+        if (status.authenticated) {
+          setIsAuthenticated(true)
+          setAuthSource(status.source === 'environment' ? 'environment' : 'session')
+        } else {
+          setIsAuthenticated(!!getLocalCookies())
+          setAuthSource(getLocalCookies() ? 'session' : 'none')
+        }
+      } else {
+        setIsAuthenticated(!!getLocalCookies())
+        setAuthSource(getLocalCookies() ? 'session' : 'none')
+      }
+      // Auto-hide panel on initial render only if user hasn't explicitly opened it
+      if (!userForcedAuthPanel) {
+        const hasCookies = !!getLocalCookies() || authSource === 'environment'
+        setShowAuthPanel(!hasCookies)
+      }
+    } catch {
+      setIsAuthenticated(!!getLocalCookies())
+      setAuthSource(getLocalCookies() ? 'session' : 'none')
+      if (!userForcedAuthPanel) {
+        setShowAuthPanel(!getLocalCookies())
+      }
+    }
+  })()
+
   // Helper functions to extract structured data from POE responses
   const extractKeyPoints = (response: string): string[] => {
     const points: string[] = []
@@ -233,5 +342,19 @@ For detailed lease risk analysis, please visit our specialized POE bot: https://
     analysisResult,
     uploadedPDF,
     clearError,
+    // Auth UI
+    isAuthenticated,
+    authSource,
+    showAuthPanel,
+    authExpanded,
+    toggleAuthExpanded,
+    openPoeSite,
+    manualCookies,
+    setManualCookies,
+    submitManualCookies,
+    clearAuthentication,
+    refreshAuthentication,
+    closeAuthPanel,
+    openAuthPanel,
   }
 }

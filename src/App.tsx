@@ -48,6 +48,18 @@ function App() {
             isLoading={chat.chatState.isLoading}
             error={chat.chatState.error}
             onClearError={chat.clearError}
+            // Auth UI
+            isAuthenticated={chat.isAuthenticated}
+            isEnvAuthenticated={chat.authSource === 'environment'}
+            showAuthPanel={chat.showAuthPanel}
+            authExpanded={chat.authExpanded}
+            toggleAuthExpanded={chat.toggleAuthExpanded}
+            openPoeSite={chat.openPoeSite}
+            manualCookies={chat.manualCookies}
+            onManualCookiesChange={chat.setManualCookies}
+            onSubmitManualCookies={chat.submitManualCookies}
+            onClearAuthentication={chat.openAuthPanel}
+            onCloseAuthPanel={chat.closeAuthPanel}
           />
           <ResultsPanel 
             analysisResult={chat.analysisResult}
