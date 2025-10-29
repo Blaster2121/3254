@@ -1,4 +1,4 @@
-# DocuSign - Legal Tools Application
+# Law.Docx - Legal Tools Application
 
 A comprehensive legal tools application featuring lease generation and legal chat functionality with PDF upload capabilities.
 
