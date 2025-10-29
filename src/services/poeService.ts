@@ -7,6 +7,7 @@ export interface POEConfig {
   botId?: string
   model?: string
   timeout?: number
+  backendUrl?: string
 }
 
 export interface POEMessage {
@@ -113,23 +114,21 @@ ${context.previousMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')}
    * This method needs to be customized based on your POE setup
    */
   private async makePOERequest(prompt: string): Promise<{ message: string }> {
-    // Check if this is POE.com configuration
-    if (this.config.apiUrl.includes('poe.com')) {
-      return await this.makePOEComRequest(prompt)
+    // Strict mode: require backend URL; do not call Poe API directly
+    if (!this.config.backendUrl) {
+      throw new Error('BACKEND_NOT_CONFIGURED')
     }
-
-    // Method 1: Direct API Call (if POE has REST API)
-    if (this.config.apiUrl) {
-      return await this.makeDirectAPICall(prompt)
+    const resp = await fetch(this.config.backendUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: prompt })
+    })
+    if (!resp.ok) {
+      const text = await resp.text()
+      throw new Error(`Backend Poe error: ${resp.status} - ${text}`)
     }
-
-    // Method 2: Webhook Integration (if POE supports webhooks)
-    if (this.config.botId) {
-      return await this.makeWebhookCall(prompt)
-    }
-
-    // Method 3: Custom Integration (for custom POE instances)
-    return await this.makeCustomIntegration(prompt)
+    const data = await resp.json()
+    return { message: data.message || 'No response received' }
   }
 
   /**
@@ -278,16 +277,18 @@ export const defaultPOEConfig: POEConfig = {
   apiKey: process.env.REACT_APP_POE_API_KEY || '', // Empty by default
   botId: process.env.REACT_APP_POE_BOT_ID || '', // Empty by default
   model: process.env.REACT_APP_POE_MODEL || 'claude-3-sonnet',
-  timeout: parseInt(process.env.REACT_APP_POE_TIMEOUT || '30000')
+  timeout: parseInt(process.env.REACT_APP_POE_TIMEOUT || '30000'),
+  backendUrl: process.env.REACT_APP_POE_BACKEND_URL || 'http://localhost:4000/api/poe/ask'
 }
 
 // Check if POE is properly configured
 export const isPOEConfigured = (): boolean => {
-  const isConfigured = !!(defaultPOEConfig.apiUrl && defaultPOEConfig.apiKey);
+  const isConfigured = !!defaultPOEConfig.backendUrl;
   console.log('POE Configuration Check:', {
     apiUrl: defaultPOEConfig.apiUrl,
     apiKey: defaultPOEConfig.apiKey ? '***configured***' : 'missing',
     botId: defaultPOEConfig.botId,
+    backendUrl: defaultPOEConfig.backendUrl ? '***configured***' : 'missing',
     isConfigured
   });
   return isConfigured;

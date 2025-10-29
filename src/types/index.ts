@@ -10,6 +10,7 @@ export interface ResultData {
   recommendations: string[]
   confidence: number
   legalAreas: string[]
+  fullResponse?: string // Store the complete POE response
 }
 
 export interface ChatState {

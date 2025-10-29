@@ -1,4 +1,5 @@
 import React from 'react'
+import ReactMarkdown from 'react-markdown'
 import { ResultData, UploadedPDF, LeaseAnalysis } from '../../types'
 import './ResultsPanel.css'
 
@@ -32,6 +33,48 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ analysisResult, uploadedPDF
           </div>
         ) : analysisResult ? (
           <div className="result-display">
+            {/* Show full POE response if available */}
+            {analysisResult.fullResponse && (
+              <div className="result-section full-response">
+                <h3>🤖 Complete Legal Analysis</h3>
+                <div className="full-response-content">
+                  <div style={{ 
+                    fontSize: '14px',
+                    lineHeight: '1.6',
+                    backgroundColor: '#f8f9fa',
+                    padding: '16px',
+                    borderRadius: '8px',
+                    border: '1px solid #e9ecef',
+                    maxHeight: '600px',
+                    overflowY: 'auto'
+                  }}>
+                    <ReactMarkdown
+                      components={{
+                        h1: ({children}) => <h1 style={{fontSize: '1.5em', marginTop: '1em', marginBottom: '0.5em'}}>{children}</h1>,
+                        h2: ({children}) => <h2 style={{fontSize: '1.3em', marginTop: '1em', marginBottom: '0.5em'}}>{children}</h2>,
+                        h3: ({children}) => <h3 style={{fontSize: '1.2em', marginTop: '0.8em', marginBottom: '0.4em'}}>{children}</h3>,
+                        h4: ({children}) => <h4 style={{fontSize: '1.1em', marginTop: '0.6em', marginBottom: '0.3em'}}>{children}</h4>,
+                        p: ({children}) => <p style={{marginBottom: '0.8em'}}>{children}</p>,
+                        ul: ({children}) => <ul style={{marginBottom: '0.8em', paddingLeft: '1.5em'}}>{children}</ul>,
+                        ol: ({children}) => <ol style={{marginBottom: '0.8em', paddingLeft: '1.5em'}}>{children}</ol>,
+                        li: ({children}) => <li style={{marginBottom: '0.3em'}}>{children}</li>,
+                        strong: ({children}) => <strong style={{fontWeight: 'bold'}}>{children}</strong>,
+                        em: ({children}) => <em style={{fontStyle: 'italic'}}>{children}</em>,
+                        code: ({children}) => <code style={{backgroundColor: '#e9ecef', padding: '2px 4px', borderRadius: '3px', fontSize: '0.9em'}}>{children}</code>,
+                        blockquote: ({children}) => <blockquote style={{borderLeft: '4px solid #007bff', paddingLeft: '1em', marginLeft: '0', fontStyle: 'italic'}}>{children}</blockquote>,
+                        table: ({children}) => <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '1em'}}>{children}</table>,
+                        th: ({children}) => <th style={{border: '1px solid #ddd', padding: '8px', backgroundColor: '#f8f9fa', fontWeight: 'bold'}}>{children}</th>,
+                        td: ({children}) => <td style={{border: '1px solid #ddd', padding: '8px'}}>{children}</td>,
+                        hr: () => <hr style={{border: 'none', borderTop: '2px solid #e9ecef', margin: '1.5em 0'}} />
+                      }}
+                    >
+                      {analysisResult.fullResponse}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="result-section">
               <h3>Summary</h3>
               <p>{analysisResult.summary}</p>

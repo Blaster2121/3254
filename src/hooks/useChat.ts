@@ -40,7 +40,7 @@ export const useChat = () => {
           previousMessages: messages.slice(-5) // Include last 5 messages for context
         }
 
-        // Send query to POE
+        // Send query to POE (backend first if configured)
         const poeResponse = await poeService.sendLegalQuery(context)
 
         if (poeResponse.success) {
@@ -49,12 +49,13 @@ export const useChat = () => {
 
           // Generate analysis result based on POE response
           const analysis: ResultData = {
-            summary: `Analysis of your query: "${currentInput}". ${poeResponse.message.substring(0, 200)}...`,
+            summary: poeResponse.message.substring(0, 500) + (poeResponse.message.length > 500 ? '...' : ''),
             keyPoints: extractKeyPoints(poeResponse.message),
             documentReferences: extractReferences(poeResponse.message),
             recommendations: extractRecommendations(poeResponse.message),
-            confidence: 0.85, // Higher confidence with POE
-            legalAreas: extractLegalAreas(poeResponse.message)
+            confidence: 0.95, // High confidence with POE
+            legalAreas: extractLegalAreas(poeResponse.message),
+            fullResponse: poeResponse.message // Store the complete response
           }
           setAnalysisResult(analysis)
         } else {
@@ -69,30 +70,20 @@ export const useChat = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred'
       
-      // Provide helpful mock response when POE is not configured
-      if (errorMessage === 'POE_NOT_CONFIGURED') {
+      // Provide helpful response when backend is not configured
+      if (errorMessage === 'POE_NOT_CONFIGURED' || errorMessage === 'BACKEND_NOT_CONFIGURED') {
         const mockResponse: Message = {
           role: 'assistant',
           content: `Thank you for your legal question: "${currentInput}".
 
-🤖 **POE Integration Status**: Currently using demo mode. To connect your POE chatbot:
+🤖 Backend integration is not configured yet. This app is set to use a local backend (no Poe API).
 
-1. **Configure POE API**: Add your POE credentials to the .env file
-2. **Restart the application**: Reload the page after configuration
-3. **Test the connection**: Try asking another legal question
+To enable it:
+1) In server/.env set POE_COOKIE_STRING to the full Cookie header from a logged-in poe.com tab and set POE_BOT_PATH=/Doccie
+2) Start the backend: cd server && npm install && npm run dev
+3) In the project .env set REACT_APP_POE_BACKEND_URL=http://localhost:4000/api/poe/ask and restart the app
 
-📋 **Current Features Available**:
-- ✅ PDF upload and lease analysis
-- ✅ Hong Kong tenancy agreement generation
-- ✅ Legal document risk assessment
-- 🔄 POE chatbot integration (pending configuration)
-
-For immediate legal assistance, please:
-- Upload your lease document for detailed analysis
-- Use the Lease Generation tool for tenancy agreements
-- Consult with a qualified attorney for specific advice
-
-Would you like help setting up the POE integration?`
+After that, send your question again and I will forward it to your Poe bot automatically.`
         }
         setMessages(prev => [...prev, mockResponse])
 
