@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { ResultData, UploadedPDF, LeaseAnalysis } from '../../types'
 import './ResultsPanel.css'
@@ -21,13 +21,36 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ analysisResult, uploadedPDF
   }
   const hasMarkdown = !!markdownFullResult
   const hasAnalysis = !!analysisResult
+  const defaultToAnalysis = hasMarkdown || hasAnalysis
+  const [viewMode, setViewMode] = useState<'analysis' | 'pdf'>(defaultToAnalysis ? 'analysis' : 'pdf')
+  const canToggle = !!uploadedPDF && defaultToAnalysis
+  const toggleLabel = useMemo(() => viewMode === 'analysis' ? 'View PDF' : 'View Analysis', [viewMode])
   return (
     <div className="results-panel">
       <div className="results-header">
         <h2>Analysis Results</h2>
+        {canToggle && (
+          <button
+            type="button"
+            onClick={() => setViewMode(prev => prev === 'analysis' ? 'pdf' : 'analysis')}
+            style={{
+              marginLeft: 'auto',
+              color: '#333',
+              backgroundColor: 'lavender',
+              border: '1px solid #d0d7de',
+              borderRadius: 4,
+              padding: '2px 7px',
+              fontSize: '10px',
+              lineHeight: 1.4,
+              cursor: 'pointer'
+            }}
+          >
+            {toggleLabel}
+          </button>
+        )}
       </div>
       <div className="results-content">
-        {uploadedPDF ? (
+        {uploadedPDF && viewMode === 'pdf' ? (
           <div className="pdf-display">
             <div className="pdf-viewer-section">
               <h3>📄 Uploaded Document: {uploadedPDF.name}</h3>

@@ -192,46 +192,12 @@ app.post('/api/poe/ask', async (req, res) => {
       }
     })
 
-    // Wait for message to be sent and processed
-    await page.waitForTimeout(3000)
-
-    // Wait for bot reply to appear (no web HTML dumps)
-    await page.waitForTimeout(3000)
-
-    // Extract latest bot response; prefer markdown container text
-    const { chatText, markdownText: doccieMarkdown } = await page.evaluate((userMessage) => {
-      const userMsg = (userMessage || '').toString().trim().toLowerCase()
-      // Chatbot latest message from main chat stream
-      const chatSelectors = [
-        '.ChatMessage_chatMessage__xkgHx',
-        '.ChatMessage_messageRow__DHlnq',
-        '.ChatMessage_messageWrapper__4Ugd6'
-      ]
-      let chat = ''
-      for (const sel of chatSelectors) {
-        const els = Array.from(document.querySelectorAll(sel))
-        for (let i = els.length - 1; i >= 0; i--) {
-          const t = (els[i].textContent || '').trim()
-          if (t && !t.toLowerCase().includes(userMsg)) { chat = t; break }
-        }
-        if (chat) break
-      }
-      // Analysis markdown from sidebar preview (first is latest)
-      const preview = document.querySelector('.ChatHistoryListItem_previewText__onOvU.ChatHistoryListItem_textOverflow__vMchf.ChatHistoryListItem_seenPreviewText__TSd4u')
-      const md = preview && preview.textContent ? preview.textContent.trim() : ''
-      return { chatText: chat, markdownText: md }
-    }, message)
-    
-    console.log('[POE] Extracted chat text length:', chatText?.length || 0)
-    if (chatText) {
-      console.log('[POE] Extracted chat text preview:', chatText.substring(0, 200) + (chatText.length > 200 ? '...' : ''))
-    } else if (doccieMarkdown) {
-      console.log('[POE] Extracted markdown preview:', (doccieMarkdown || '').substring(0, 200))
-    } else {
-      console.log('[POE] No response content found')
-    }
-    
-    // Clean markdown
+    // Wait for bot reply to appear and stabilize (unchanged at least 4 times)
+    let lastCombined = ''
+    let stableCount = 0
+    let latestMarkdown = ''
+    let latestChat = ''
+    const maxChecks = 90 // up to ~90 seconds (1s interval)
     const cleanMarkdown = (md) => {
       if (!md) return md
       let out = md
@@ -240,10 +206,41 @@ app.post('/api/poe/ask', async (req, res) => {
       out = out.replace(/\n{3,}/g, '\n\n')
       return out.trim()
     }
-
-    const cleaned = cleanMarkdown(doccieMarkdown || '')
-    const reply = chatText || cleaned || 'No response content found'
-
+    for (let i = 0; i < maxChecks; i++) {
+      await page.waitForTimeout(1000)
+      const { chatText: chatNow, markdownText: mdNow } = await page.evaluate((userMessage) => {
+        const userMsg = (userMessage || '').toString().trim().toLowerCase()
+        const chatSelectors = [
+          '.ChatMessage_chatMessage__xkgHx',
+          '.ChatMessage_messageRow__DHlnq',
+          '.ChatMessage_messageWrapper__4Ugd6'
+        ]
+        let chat = ''
+        for (const sel of chatSelectors) {
+          const els = Array.from(document.querySelectorAll(sel))
+          for (let i = els.length - 1; i >= 0; i--) {
+            const t = (els[i].textContent || '').trim()
+            if (t && !t.toLowerCase().includes(userMsg)) { chat = t; break }
+          }
+          if (chat) break
+        }
+        const preview = document.querySelector('.ChatHistoryListItem_previewText__onOvU.ChatHistoryListItem_textOverflow__vMchf.ChatHistoryListItem_seenPreviewText__TSd4u')
+        const md = preview && preview.textContent ? preview.textContent.trim() : ''
+        return { chatText: chat, markdownText: md }
+      }, message)
+      latestChat = chatNow || latestChat
+      latestMarkdown = mdNow || latestMarkdown
+      const combined = (chatNow || '') + '\n\n' + cleanMarkdown(mdNow || '')
+      if (combined && combined === lastCombined) {
+        stableCount++
+        if (stableCount >= 4) break
+      } else {
+        lastCombined = combined
+        stableCount = 0
+      }
+    }
+    const cleaned = cleanMarkdown(latestMarkdown || '')
+    const reply = latestChat || cleaned || 'No response content found'
     res.json({ message: reply, markdown: cleaned })
   } catch (err) {
     console.error('Poe automation error:', err)
