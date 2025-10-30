@@ -7,17 +7,20 @@ interface ResultsPanelProps {
   analysisResult: ResultData | null
   uploadedPDF: UploadedPDF | null
   leaseAnalysis: LeaseAnalysis | null
+  markdownFullResult?: string | null
 }
 
-const ResultsPanel: React.FC<ResultsPanelProps> = ({ analysisResult, uploadedPDF, leaseAnalysis }) => {
+const ResultsPanel: React.FC<ResultsPanelProps> = ({ analysisResult, uploadedPDF, leaseAnalysis, markdownFullResult }) => {
   const formatDisplayContent = (text: string): string => {
     if (!text) return text
     let out = text
-    out = out.replace(/^Doccie\s+/, '[Doccie] ')
+    out = out.replace(/^Doccie+/, '')
     out = out.replace(/\s*(?:[|·]\s*)?View\s+sources\s*(?=(\d{1,2}:\d{2}\s?(AM|PM))\s*$)/i, '')
-    out = out.replace(/(\d{1,2}:\d{2}\s?(AM|PM|上午|下午))$/i, '[$1]')
+    out = out.replace(/(\d{1,2}:\d{2}\s?(AM|PM))$/i, '[$1]')
     return out
   }
+  const hasMarkdown = !!markdownFullResult
+  const hasAnalysis = !!analysisResult
   return (
     <div className="results-panel">
       <div className="results-header">
@@ -39,10 +42,10 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ analysisResult, uploadedPDF
               </div>
             </div>
           </div>
-        ) : analysisResult ? (
+        ) : (hasAnalysis || hasMarkdown) ? (
           <div className="result-display">
             {/* Show full POE response if available */}
-            {analysisResult.fullResponse && (
+            {(hasMarkdown || analysisResult!.fullResponse) && (
               <div className="result-section full-response">
                 <h3>🤖 Complete Legal Analysis</h3>
                 <div className="full-response-content">
@@ -76,66 +79,64 @@ const ResultsPanel: React.FC<ResultsPanelProps> = ({ analysisResult, uploadedPDF
                         hr: () => <hr style={{border: 'none', borderTop: '2px solid #e9ecef', margin: '1.5em 0'}} />
                       }}
                     >
-                      {formatDisplayContent(analysisResult.fullResponse)}
+                      {formatDisplayContent((markdownFullResult || analysisResult!.fullResponse) as string)}
                     </ReactMarkdown>
                   </div>
                 </div>
               </div>
             )}
-            
-            <div className="result-section">
-              <h3>Summary</h3>
-              <p>{analysisResult.summary}</p>
-            </div>
-            
-            <div className="result-section">
-              <h3>Key Points</h3>
-              <ul>
-                {analysisResult.keyPoints.map((point, index) => (
-                  <li key={index}>{point}</li>
-                ))}
-              </ul>
-            </div>
-            
-            <div className="result-section">
-              <h3>Recommendations</h3>
-              <ul>
-                {analysisResult.recommendations.map((recommendation, index) => (
-                  <li key={index}>{recommendation}</li>
-                ))}
-              </ul>
-            </div>
-            
-            <div className="result-section">
-              <h3>Document References</h3>
-              <ul>
-                {analysisResult.documentReferences.map((reference, index) => (
-                  <li key={index}>{reference}</li>
-                ))}
-              </ul>
-            </div>
-            
-            <div className="result-section">
-              <h3>Legal Areas</h3>
-              <div className="legal-areas">
-                {analysisResult.legalAreas.map((area, index) => (
-                  <span key={index} className="legal-area-tag">{area}</span>
-                ))}
-              </div>
-            </div>
-            
-            <div className="result-section">
-              <h3>Confidence Score</h3>
-              <div className="confidence-bar">
-                <div 
-                  className="confidence-fill" 
-                  style={{ width: `${analysisResult.confidence * 100}%` }}
-                ></div>
-                <span className="confidence-text">
-                  {Math.round(analysisResult.confidence * 100)}%
-                </span>
-              </div>
-            </div>
+            {hasAnalysis && (
+              <>
+                <div className="result-section">
+                  <h3>Summary</h3>
+                  <p>{analysisResult!.summary}</p>
+                </div>
+                <div className="result-section">
+                  <h3>Key Points</h3>
+                  <ul>
+                    {analysisResult!.keyPoints.map((point, index) => (
+                      <li key={index}>{point}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="result-section">
+                  <h3>Recommendations</h3>
+                  <ul>
+                    {analysisResult!.recommendations.map((recommendation, index) => (
+                      <li key={index}>{recommendation}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="result-section">
+                  <h3>Document References</h3>
+                  <ul>
+                    {analysisResult!.documentReferences.map((reference, index) => (
+                      <li key={index}>{reference}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="result-section">
+                  <h3>Legal Areas</h3>
+                  <div className="legal-areas">
+                    {analysisResult!.legalAreas.map((area, index) => (
+                      <span key={index} className="legal-area-tag">{area}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="result-section">
+                  <h3>Confidence Score</h3>
+                  <div className="confidence-bar">
+                    <div 
+                      className="confidence-fill" 
+                      style={{ width: `${analysisResult!.confidence * 100}%` }}
+                    ></div>
+                    <span className="confidence-text">
+                      {Math.round(analysisResult!.confidence * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div className="empty-state">

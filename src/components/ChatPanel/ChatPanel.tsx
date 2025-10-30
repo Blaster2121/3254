@@ -53,11 +53,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   const formatDisplayContent = (text: string): string => {
     if (!text) return text
     let out = text
-    // Replace leading "Doccie " with "[Doccie] "
-    out = out.replace(/^Doccie\s+/, '[Doccie] ')
-    // Remove trailing "View sources" right before a timestamp
+    out = out.replace(/^Doccie+/, '')
     out = out.replace(/\s*(?:[|·]\s*)?View\s+sources\s*(?=(\d{1,2}:\d{2}\s?(AM|PM))\s*$)/i, '')
-    // Replace trailing timestamp like 3:06 AM with [3:06 AM]
     out = out.replace(/(\d{1,2}:\d{2}\s?(AM|PM))$/i, '[$1]')
     return out
   }
@@ -66,7 +63,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     <div className="chat-panel">
       <div className="chat-header">
         <h2>Legal Assistant</h2>
-        {isAuthenticated && (
+        {isAuthenticated ? (
           <div style={{ fontSize: '12px', color: '#4caf50', display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '5px' }}>
             <span>✓ Authenticated</span>
             {onClearAuthentication && (
@@ -74,6 +71,10 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
                 ↻
               </button>
             )}
+          </div>
+        ) : (
+          <div style={{ fontSize: '12px', color: '#f44336', display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '5px' }}>
+            <span>✕ Not authenticated</span>
           </div>
         )}
       </div>
@@ -85,7 +86,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <strong>POE Authentication</strong>
-              <div style={{ fontSize: 12, opacity: 0.95 }}>{isAuthenticated ? 'Authenticated' : 'Click to show options'}</div>
+              <div style={{ fontSize: 12, opacity: 0.95, color: isAuthenticated ? 'white' : '#ffcccc' }}>
+                {isAuthenticated ? 'Authenticated' : 'Not authenticated — click Show to proceed'}
+              </div>
             </div>
             {toggleAuthExpanded && (
               <button onClick={toggleAuthExpanded} style={{ background: 'white', color: '#667eea', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer' }}>
@@ -256,9 +259,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
               <ol style={{ paddingLeft: 20, margin: '6px 0 12px' }}>
                 <li>Open <a href="https://poe.com/Doccie" target="_blank" rel="noreferrer">poe.com/Doccie</a> and log in.</li>
                 <li>Press F12 (or Cmd+Opt+I) to open DevTools.</li>
-                <li>Go to Application tab → Storage → Cookies → https://poe.com.</li>
-                <li>Copy the values of relevant cookies (for example: p-b, p-l, etc.).</li>
-                <li>Combine into one line like: <code>p-b=...; p-l=...; other=...</code> and paste into the app.</li>
+                <li>Go to Network → receive_POST → Cookie.</li>
+                <li>Copy the values of relevant cookies (for example: <code>p-b=...; p-l=...; other=...</code>).</li>
+                <li>Paste into the app.</li>
               </ol>
 
               <h4 style={{ margin: '14px 0 6px' }}>Potential risks:</h4>

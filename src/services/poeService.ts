@@ -18,6 +18,7 @@ export interface POEMessage {
 export interface POEResponse {
   message: string
   success: boolean
+  markdown?: string
   error?: string
   metadata?: {
     model: string
@@ -84,6 +85,7 @@ class POEService {
       
       return {
         message: response.message,
+        markdown: (response as any).markdown,
         success: true,
         metadata: {
           model: this.config.model || 'default',
@@ -142,7 +144,7 @@ ${context.previousMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')}
    * Make the actual request to POE API
    * This method needs to be customized based on your POE setup
    */
-  private async makePOERequest(prompt: string): Promise<{ message: string }> {
+  private async makePOERequest(prompt: string): Promise<{ message: string; markdown?: string }> {
     // Strict mode: require backend URL; do not call Poe API directly
     if (!this.config.backendUrl) {
       throw new Error('BACKEND_NOT_CONFIGURED')
@@ -169,7 +171,7 @@ ${context.previousMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')}
       throw new Error(`Backend Poe error: ${resp.status} - ${text}`)
     }
     const data = await resp.json()
-    return { message: data.message || 'No response received' }
+    return { message: data.message || 'No response received', markdown: data.markdown }
   }
 
   /**

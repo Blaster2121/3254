@@ -11,6 +11,8 @@ export const useChat = () => {
     error: null
   })
   const [analysisResult, setAnalysisResult] = useState<ResultData | null>(null)
+  const [markdownFullResult, setMarkdownFullResult] = useState<string | null>(null)
+
   const [uploadedPDF, setUploadedPDF] = useState<UploadedPDF | null>(null)
   // Lightweight auth UI state
   const getLocalCookies = (): string | null => {
@@ -56,6 +58,7 @@ export const useChat = () => {
         if (poeResponse.success) {
           const assistantMessage: Message = { role: 'assistant', content: poeResponse.message }
           setMessages(prev => [...prev, assistantMessage])
+          setMarkdownFullResult(poeResponse.markdown || poeResponse.message)
 
           // Generate analysis result based on POE response
           const analysis: ResultData = {
@@ -96,6 +99,7 @@ To enable it:
 After that, send your question again and I will forward it to your Poe bot automatically.`
         }
         setMessages(prev => [...prev, mockResponse])
+        setMarkdownFullResult(mockResponse.content)
 
         // Generate mock analysis
         const mockAnalysis: ResultData = {
@@ -340,6 +344,7 @@ For detailed lease risk analysis, please visit our specialized POE bot: https://
     handleFileUpload,
     chatState,
     analysisResult,
+    markdownFullResult,
     uploadedPDF,
     clearError,
     // Auth UI

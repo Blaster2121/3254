@@ -65,6 +65,7 @@ function App() {
             analysisResult={chat.analysisResult}
             uploadedPDF={chat.uploadedPDF}
             leaseAnalysis={null}
+            markdownFullResult={chat.markdownFullResult}
           />
         </div>
       ) : (
