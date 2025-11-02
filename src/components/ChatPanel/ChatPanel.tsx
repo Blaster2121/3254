@@ -79,6 +79,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         )}
       </div>
 
+      <div style={{
+        margin: '10px',
+        padding: '12px 16px',
+        background: '#fff3cd',
+        border: '1px solid #ffc107',
+        borderRadius: '6px',
+        fontSize: '12px',
+        lineHeight: '1.5',
+        color: '#856404'
+      }}>
+        <strong>⚠️ Disclaimer:</strong> Nothing in this Tool is intended to be nor should be construed as legal advice. This is an educational project created by students. Please consult your lawyer for legal advice.
+      </div>
+
       {showAuthPanel && (
         <div className="auth-prompt-banner" style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '12px 16px', margin: '10px', borderRadius: '8px'
