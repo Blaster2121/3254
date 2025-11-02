@@ -12,7 +12,9 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
   const [currentSection, setCurrentSection] = useState<string>('header')
   const [isGenerating, setIsGenerating] = useState(false)
   
-  const { register, handleSubmit, formState: { errors } } = useForm<CLICLeaseData>()
+  const { register, handleSubmit, formState: { errors }, trigger } = useForm<CLICLeaseData>({
+    mode: 'onChange' // Validate on change for better UX
+  })
   
   const sections = Object.keys(CLIC_SECTIONS)
   const currentSectionData = CLIC_SECTIONS[currentSection as keyof typeof CLIC_SECTIONS]
@@ -46,7 +48,9 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
         return (
           <input
             type="text"
-            {...register(fieldName, { required: field.required })}
+            {...register(fieldName, { 
+              required: field.required ? `${field.label} is required` : false 
+            })}
             placeholder={field.placeholder}
             className={`form-input ${errors[fieldName] ? 'error' : ''}`}
           />
@@ -55,7 +59,9 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
       case 'textarea':
         return (
           <textarea
-            {...register(fieldName, { required: field.required })}
+            {...register(fieldName, { 
+              required: field.required ? `${field.label} is required` : false 
+            })}
             placeholder={field.placeholder}
             rows={3}
             className={`form-textarea ${errors[fieldName] ? 'error' : ''}`}
@@ -66,7 +72,9 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
         return (
           <input
             type="date"
-            {...register(fieldName, { required: field.required })}
+            {...register(fieldName, { 
+              required: field.required ? `${field.label} is required` : false 
+            })}
             className={`form-input ${errors[fieldName] ? 'error' : ''}`}
           />
         )
@@ -75,7 +83,9 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
         return (
           <input
             type="number"
-            {...register(fieldName, { required: field.required })}
+            {...register(fieldName, { 
+              required: field.required ? `${field.label} is required` : false 
+            })}
             placeholder={field.placeholder}
             className={`form-input ${errors[fieldName] ? 'error' : ''}`}
           />
@@ -87,7 +97,9 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
             <span className="currency-symbol">HKD</span>
             <input
               type="number"
-              {...register(fieldName, { required: field.required })}
+              {...register(fieldName, { 
+                required: field.required ? `${field.label} is required` : false 
+              })}
               placeholder={field.placeholder}
               className={`form-input ${errors[fieldName] ? 'error' : ''}`}
             />
@@ -97,7 +109,15 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
       case 'select':
         return (
           <select
-            {...register(fieldName, { required: field.required })}
+            {...register(fieldName, { 
+              required: field.required ? `${field.label} is required` : false,
+              validate: (value) => {
+                if (field.required && !value) {
+                  return `${field.label} is required`
+                }
+                return true
+              }
+            })}
             className={`form-select ${errors[fieldName] ? 'error' : ''}`}
           >
             <option value="">Select an option</option>
@@ -124,11 +144,24 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
     }
   }
   
-  const nextSection = (e?: React.MouseEvent) => {
+  const nextSection = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault()
       e.stopPropagation()
     }
+    
+    // Validate all required fields in current section before proceeding
+    const currentSectionFields = currentFields.filter(field => field.required)
+    const fieldNames = currentSectionFields.map(field => field.id as keyof CLICLeaseData)
+    
+    // Trigger validation for all required fields in current section
+    const isValid = await trigger(fieldNames)
+    
+    if (!isValid) {
+      // Validation failed, don't proceed to next section
+      return
+    }
+    
     const currentIndex = sections.indexOf(currentSection)
     if (currentIndex < sections.length - 1) {
       setCurrentSection(sections[currentIndex + 1])
@@ -189,7 +222,9 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
                   <p className="field-description">{field.description}</p>
                 )}
                 {errors[field.id as keyof CLICLeaseData] && (
-                  <p className="field-error">This field is required</p>
+                  <p className="field-error">
+                    {errors[field.id as keyof CLICLeaseData]?.message || 'This field is required'}
+                  </p>
                 )}
               </div>
             ))}

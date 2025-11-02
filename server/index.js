@@ -256,12 +256,43 @@ app.post('/api/poe/ask', async (req, res) => {
 
 app.get('/health', (_req, res) => res.json({ ok: true }))
 
+// Check if LaTeX is installed
+async function checkLatexInstalled() {
+  try {
+    await exec('pdflatex --version', { timeout: 5000 })
+    return true
+  } catch {
+    return false
+  }
+}
+
 // Compile LaTeX to PDF and stream it back without persisting
 app.post('/api/pdf/generate', async (req, res) => {
   const { latex, filename = 'Tenancy_Agreement' } = req.body || {}
   if (!latex || typeof latex !== 'string') {
     return res.status(400).json({ error: 'latex is required' })
   }
+  
+  // Check if LaTeX is installed
+  const latexInstalled = await checkLatexInstalled()
+  if (!latexInstalled) {
+    const platform = process.platform
+    let installInstructions = ''
+    if (platform === 'win32') {
+      installInstructions = 'Please install MiKTeX (https://miktex.org/download) or TeX Live (https://www.tug.org/texlive/acquire-netinst.html). After installation, restart the server.'
+    } else if (platform === 'darwin') {
+      installInstructions = 'Please install MacTeX (https://www.tug.org/mactex/). Alternatively, you can install via Homebrew: brew install --cask mactex. After installation, restart the server.'
+    } else {
+      installInstructions = 'Please install TeX Live. On Ubuntu/Debian: sudo apt-get install texlive-full. On Fedora: sudo dnf install texlive-scheme-full. On Arch: sudo pacman -S texlive-most. After installation, restart the server.'
+    }
+    return res.status(500).json({ 
+      error: 'LaTeX (pdflatex) is not installed or not found in PATH.',
+      platform,
+      installInstructions,
+      helpUrl: 'https://www.latex-project.org/get/'
+    })
+  }
+  
   const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'latex-'))
   const texPath = path.join(tmpDir, `${filename}.tex`)
   const pdfPath = path.join(tmpDir, `${filename}.pdf`)
@@ -274,7 +305,15 @@ app.post('/api/pdf/generate', async (req, res) => {
     res.send(pdf)
   } catch (e) {
     console.error('[PDF] Error:', e)
-    res.status(500).json({ error: e instanceof Error ? e.message : 'Unknown error' })
+    const errorMsg = e instanceof Error ? e.message : 'Unknown error'
+    // Provide more helpful error messages
+    if (errorMsg.includes('command not found') || errorMsg.includes('not recognized')) {
+      return res.status(500).json({ 
+        error: 'LaTeX (pdflatex) command not found. Please install LaTeX and ensure it is in your PATH.',
+        originalError: errorMsg
+      })
+    }
+    res.status(500).json({ error: errorMsg })
   } finally {
     // Best-effort cleanup
     try { await fs.promises.rm(tmpDir, { recursive: true, force: true }) } catch {}
