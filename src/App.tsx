@@ -19,7 +19,7 @@ function App() {
   return (
     <div className="app-container">
       <div className="app-header">
-        <h1>DocuSign</h1>
+        <h1>Law.Docx</h1>
         <div className="mode-switcher">
           <button 
             className={`mode-button ${mode === 'chat' ? 'active' : ''}`}

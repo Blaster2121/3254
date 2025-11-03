@@ -155,7 +155,7 @@ ${escapeLatex(data.depositAmount)} HK\\$${escapeLatex(data.depositAmount)} ONLY 
 \\vspace{3cm}
 \\hfill Tenant's signature\\\\
 {}RECEIVED from the Landlord \\hspace{5.6cm})\\\\
-{}${escapeLatex(data.depositAmount)} key(s) of the Premises\\hspace{6.27cm})\\\\
+${escapeLatex(data.numberOfKeys)} key(s) of the Premises\\hspace{6.27cm})\\\\
 {}by the Tenant.\\hspace{8.78cm})\\hfill\\underline{\\hspace{3.61cm}}\\\\
 \\vspace{3cm}
 \\hfill Tenant's signature\\\\
@@ -523,7 +523,22 @@ function generatePDFClientSide(data: CLICLeaseData): void {
       yPos += termLines.length * lineHeight
     }
   }
-  
+
+  // Additional Terms page (if provided)
+  if (data.additionalTerms && data.additionalTerms.trim()) {
+    doc.addPage()
+    yPos = topMargin
+    doc.setFont('helvetica', 'bold')
+    doc.text('ADDITIONAL TERMS', pageWidth / 2, yPos, { align: 'center' })
+    addSpace(lineHeight)
+    doc.setFont('helvetica', 'normal')
+    const addLines = doc.splitTextToSize(data.additionalTerms.trim(), availableWidth)
+    addLines.forEach((line: string) => {
+      doc.text(line, leftMargin, yPos)
+      addSpace(lineHeight)
+    })
+  }
+
   // Signature page (\newpage \noindent) - Always start on new page
   doc.addPage()
   yPos = topMargin
@@ -599,7 +614,7 @@ function generatePDFClientSide(data: CLICLeaseData): void {
   doc.text(')', parenX2, yPos) // Closing parenthesis aligned with line, just before signing line
   addSpace(lineHeight)
   
-  doc.text(`${data.depositAmount} key(s) of the Premises`, leftMargin, yPos)
+  doc.text(`${data.numberOfKeys} key(s) of the Premises`, leftMargin, yPos)
   doc.text(')', parenX2, yPos) // Closing parenthesis aligned with line, just before signing line
   addSpace(lineHeight)
   
@@ -627,7 +642,7 @@ export async function generateCLICLeasePDF(data: CLICLeaseData): Promise<void> {
       'termYears', 'termStartDay', 'termStartMonth', 'termStartYear',
       'termEndDay', 'termEndMonth', 'termEndYear',
       'monthlyRent', 'rentInclusive', 'managementFees', 'governmentRates',
-      'rentPaymentDay', 'depositAmount'
+      'rentPaymentDay', 'depositAmount', 'numberOfKeys'
     ]
 
     for (const field of requiredFields) {

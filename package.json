@@ -31,7 +31,13 @@
     "setup": "npm install",
     "dev": "npm start",
     "clean": "rm -rf node_modules package-lock.json && npm install",
-    "tex:pdf": "bash toPdf.sh"
+    "tex:pdf": "bash toPdf.sh",
+    "start:frontend": "react-scripts start",
+    "start:backend": "cd server && npm start",
+    "start:all": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   },
   "eslintConfig": {
     "extends": [

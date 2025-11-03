@@ -1,8 +1,8 @@
 @echo off
-REM DocuSign Legal Tools - Quick Setup Script for Windows
+REM Law.Docx Legal Tools - Quick Setup Script for Windows
 REM This script helps Windows users quickly set up the legal tools application
 
-echo 🚀 DocuSign Legal Tools - Quick Setup
+echo 🚀 Law.Docx Legal Tools - Quick Setup
 echo ======================================
 echo.
 
