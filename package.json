@@ -32,6 +32,7 @@
     "dev": "npm start",
     "clean": "rm -rf node_modules package-lock.json && npm install",
     "tex:pdf": "bash toPdf.sh",
+    "install:all": "npm install && cd server && npm install",
     "start:frontend": "react-scripts start",
     "start:backend": "cd server && npm start",
     "start:all": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
