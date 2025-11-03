@@ -303,7 +303,7 @@ function generatePDFClientSide(data: CLICLeaseData): void {
   doc.setFont('helvetica', 'bold')
   const titleWidth = doc.getTextWidth('TENANCY AGREEMENT')
   doc.text('TENANCY AGREEMENT', (pageWidth - titleWidth) / 2, yPos)
-  addSpace(lineHeight)
+  addSpace(lineHeight * 2)
   
   // {}An Agreement made on... \\[2em]
   doc.setFontSize(fontSize)
@@ -314,7 +314,7 @@ function generatePDFClientSide(data: CLICLeaseData): void {
   // {}BETWEEN
   doc.setFont('helvetica', 'bold')
   doc.text('BETWEEN', leftMargin, yPos)
-  addSpace(lineHeight) // Small space after BETWEEN (approximately 1 line) before first item
+  addSpace(lineHeight * 2) // Extra blank line after BETWEEN before first item
   
   // \begin{enumerate}[label=\arabic*), left=0pt, itemsep=1em, topsep=1em]
   doc.setFont('helvetica', 'normal')
@@ -333,7 +333,7 @@ function generatePDFClientSide(data: CLICLeaseData): void {
   // 1. THE PARTIES AGREE AS FOLLOWS: (not bold, period format)
   doc.setFont('helvetica', 'normal')
   doc.text('1. THE PARTIES AGREE AS FOLLOWS:', leftMargin, yPos)
-  addSpace(lineHeight * 1.5) // Space after heading before sub-sections
+  addSpace(lineHeight * 2) // Extra blank line after big title
   
   // Clauses a, b, c (with hanging indent and spacing)
   addClauseWithHangingIndent('a.', `The Landlord lets and the Tenant takes ALL THAT ${data.premisesAddress} (the "Premises") together with the use in common with the Landlord and all others having the like right of all the common areas, common access, entrances, staircase, lifts, passages of the building of which the Premises form part (the "Building") and all the easements and rights appurtenant to the Premises AND together with the furniture and appliances (if any) as set out in Part 1 of the Schedule in this Agreement ("the Furniture") for the Term and at the Rent more particularised in Clauses 1b and 1c of this Agreement.`, 20)
@@ -351,7 +351,7 @@ function generatePDFClientSide(data: CLICLeaseData): void {
   // 2. DURING THE TERM, THE TENANT AGREES WITH THE LANDLORD AS FOLLOWS:
   doc.setFont('helvetica', 'normal')
   doc.text('2. DURING THE TERM, THE TENANT AGREES WITH THE LANDLORD AS FOLLOWS:', leftMargin, yPos)
-  addSpace(lineHeight) // Small space after big topic heading (approximately 1 line) before sub-sections
+  addSpace(lineHeight * 2) // Extra blank line after big title
   
   // \begin{enumerate}[label=\alph*., itemsep=1em, topsep=1em]
   doc.setFont('helvetica', 'normal')
@@ -420,7 +420,7 @@ function generatePDFClientSide(data: CLICLeaseData): void {
   // 3. DURING THE TERM, THE LANDLORD AGREES WITH THE TENANT AS FOLLOWS:
   doc.setFont('helvetica', 'normal')
   doc.text('3. DURING THE TERM, THE LANDLORD AGREES WITH THE TENANT AS FOLLOWS:', leftMargin, yPos)
-  addSpace(lineHeight) // Small space after big topic heading (approximately 1 line) before sub-sections
+  addSpace(lineHeight * 2) // Extra blank line after big title
   
   doc.setFont('helvetica', 'normal')
   doc.text('a.', leftMargin + 20, yPos)
@@ -446,7 +446,7 @@ function generatePDFClientSide(data: CLICLeaseData): void {
   // 5. DURING THE TERM, THE PARTIES FURTHER AGREE AS FOLLOWS:
   doc.setFont('helvetica', 'normal')
   doc.text('5. DURING THE TERM, THE PARTIES FURTHER AGREE AS FOLLOWS:', leftMargin, yPos)
-  addSpace(lineHeight) // Small space after big topic heading (approximately 1 line) before sub-sections
+  addSpace(lineHeight * 2) // Extra blank line after big title
   
   doc.setFont('helvetica', 'normal')
   addClauseWithHangingIndent('a.', `Upon the signing of this Agreement, the Tenant shall pay to the Landlord a deposit of Hong Kong Dollars $${data.depositAmount} to secure the due observance and performance of the terms in this Agreement by the Tenant (the "Deposit").`, 20)
@@ -454,7 +454,7 @@ function generatePDFClientSide(data: CLICLeaseData): void {
   
   addClauseWithHangingIndent('b.', `If the Rent or any payment payable by the Tenant under this Agreement shall be unpaid wholly or partially for 15 days after the due date (whether legally or formally demanded or not) or if the Landlord shall suffer any loss or damages or incur any expenses due to the breach of any term of this Agreement by the Tenant, the Landlord shall deduct any outstanding sum or any loss, damages and expense suffered or incurred by the Landlord from the Deposit without prejudice to the Landlord's right to claim any further damages and any other right or remedy which the Landlord may have against the Tenant in respect of such non-payment or breach of this Agreement. Upon such deduction, the Tenant shall immediately deposit the deducted amount with the Landlord to maintain the Deposit at the sum of Hong Kong Dollars $${data.depositAmount} throughout the Term.`, 20)
   addSpace(lineHeight * 1.2) // More spacing between clauses
-  
+
   addClauseWithHangingIndent('c.', 'At the expiration or early termination of this Agreement and provided there is no outstanding Rent and payment owed by the Tenant and there is no breach of any term of this Agreement by the Tenant, the Landlord shall refund the Deposit (less any deductions which the Landlord can make according to this Agreement) to the Tenant without interest within 14 days after the delivery of vacant possession of the Premises (including the Furniture, if any) to the Landlord or after full settlement of any outstanding payment payable by Tenant under this Agreement, whichever is later.', 20)
   addSpace(lineHeight * 1.2) // More spacing between clauses
   
@@ -492,11 +492,11 @@ function generatePDFClientSide(data: CLICLeaseData): void {
     if (data.furnitureProvided) {
       doc.setFont('helvetica', 'bold')
       doc.text('THE SCHEDULE REFERRED TO ABOVE', pageWidth / 2, yPos, { align: 'center' })
-      addSpace(emToPt(1))
+      addSpace(emToPt(1) + lineHeight)
       doc.text('PART 1', pageWidth / 2, yPos, { align: 'center' })
-      addSpace(emToPt(1))
+      addSpace(emToPt(1) + lineHeight)
       doc.text('THE FURNITURE', pageWidth / 2, yPos, { align: 'center' })
-      addSpace(lineHeight)
+      addSpace(lineHeight * 2)
       doc.setFont('helvetica', 'normal')
       const furnitureLines = data.furnitureList.split('\n')
       furnitureLines.forEach(line => {
@@ -513,9 +513,9 @@ function generatePDFClientSide(data: CLICLeaseData): void {
       }
       doc.setFont('helvetica', 'bold')
       doc.text('PART 2', pageWidth / 2, yPos, { align: 'center' })
-      addSpace(emToPt(1))
+      addSpace(emToPt(1) + lineHeight)
       doc.text('ADDITIONAL TERM AGREED BY THE PARTIES', pageWidth / 2, yPos, { align: 'center' })
-      addSpace(lineHeight)
+      addSpace(lineHeight * 2)
       doc.setFont('helvetica', 'normal')
       const termClause = `5.    Notwithstanding any contrary provision in this Agreement, the parties agree that either the Landlord or the Tenant shall be entitled to early terminate this Tenancy Agreement during the Term, by giving not less than ${data.terminationNoticeMonths} month's prior written notice of such intention of early termination to the other party or by paying ${data.terminationNoticeRentMonths} month's Rent in lieu of such notice to the other party provided this Agreement cannot be terminated before ${data.earliestTerminationDate} pursuant to this Clause.`
       const termLines = doc.splitTextToSize(termClause, availableWidth)
