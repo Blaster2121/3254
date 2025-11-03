@@ -47,9 +47,12 @@ export interface CLICLeaseData {
   // Deposit
   depositAmount: string
   
+  // Handover Details
+  numberOfKeys: string
+  
   // Furniture
   furnitureProvided: boolean
-  furnitureList: string
+  furnitureList: string // FIXME should be in list
   
   // Early Termination
   hasEarlyTermination: boolean
@@ -269,6 +272,15 @@ export const CLIC_TEMPLATE_FIELDS: CLICField[] = [
     required: true,
     placeholder: 'e.g., 30000',
     description: 'Security deposit amount (usually 2-3 months rent)',
+    section: 'deposit'
+  },
+  {
+    id: 'numberOfKeys',
+    label: 'Number of Keys',
+    type: 'number',
+    required: true,
+    placeholder: 'e.g., 2',
+    description: 'Number of keys handed over to the tenant',
     section: 'deposit'
   },
   

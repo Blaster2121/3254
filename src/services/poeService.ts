@@ -7,6 +7,7 @@ export interface POEConfig {
   botId?: string
   model?: string
   timeout?: number
+  backendUrl?: string
 }
 
 export interface POEMessage {
@@ -17,6 +18,7 @@ export interface POEMessage {
 export interface POEResponse {
   message: string
   success: boolean
+  markdown?: string
   error?: string
   metadata?: {
     model: string
@@ -32,6 +34,35 @@ export interface LegalQueryContext {
     name: string
   }
   previousMessages?: POEMessage[]
+}
+
+// Local helper to read cookies stored by the app
+const getPOECookies = (): string | null => {
+  try {
+    return localStorage.getItem('poe_cookies')
+  } catch {
+    return null
+  }
+}
+
+// Stable bot path handling within a page session
+export const defaultBotPath = process.env.REACT_APP_POE_DEFAULT_BOT_PATH || '/Doccie'
+export const getCurrentBotPath = (): string => {
+  try {
+    const stored = sessionStorage.getItem('poe_bot_path')
+    if (stored && stored.trim()) {
+      return stored.startsWith('/') ? stored : `/${stored}`
+    }
+    return defaultBotPath
+  } catch {
+    return defaultBotPath
+  }
+}
+export const setCurrentBotPath = (path: string): void => {
+  try {
+    const normalized = path && path.startsWith('/') ? path : `/${path || ''}`
+    sessionStorage.setItem('poe_bot_path', normalized)
+  } catch {}
 }
 
 class POEService {
@@ -54,6 +85,7 @@ class POEService {
       
       return {
         message: response.message,
+        markdown: (response as any).markdown,
         success: true,
         metadata: {
           model: this.config.model || 'default',
@@ -91,7 +123,7 @@ Instructions:
       prompt += `
 Document Analysis:
 - Document Name: ${context.uploadedPDF.name}
-- Document Content: ${context.uploadedPDF.text.substring(0, 2000)}...
+- Document Content: ${context.uploadedPDF.text}
 
 Please analyze this document in relation to the user's query and provide specific insights.
 `
@@ -112,24 +144,34 @@ ${context.previousMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')}
    * Make the actual request to POE API
    * This method needs to be customized based on your POE setup
    */
-  private async makePOERequest(prompt: string): Promise<{ message: string }> {
-    // Check if this is POE.com configuration
-    if (this.config.apiUrl.includes('poe.com')) {
-      return await this.makePOEComRequest(prompt)
+  private async makePOERequest(prompt: string): Promise<{ message: string; markdown?: string }> {
+    // Strict mode: require backend URL; do not call Poe API directly
+    if (!this.config.backendUrl) {
+      throw new Error('BACKEND_NOT_CONFIGURED')
+    }
+    // Ensure stable bot across requests in this page session
+    if (!sessionStorage.getItem('poe_bot_path')) {
+      setCurrentBotPath(defaultBotPath)
+    }
+    const botPath = getCurrentBotPath()
+
+    const headers: HeadersInit = { 'Content-Type': 'application/json' }
+    const cookies = getPOECookies()
+    if (cookies) {
+      headers['x-poe-cookies'] = cookies
     }
 
-    // Method 1: Direct API Call (if POE has REST API)
-    if (this.config.apiUrl) {
-      return await this.makeDirectAPICall(prompt)
+    const resp = await fetch(this.config.backendUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ message: prompt, botPath })
+    })
+    if (!resp.ok) {
+      const text = await resp.text()
+      throw new Error(`Backend Poe error: ${resp.status} - ${text}`)
     }
-
-    // Method 2: Webhook Integration (if POE supports webhooks)
-    if (this.config.botId) {
-      return await this.makeWebhookCall(prompt)
-    }
-
-    // Method 3: Custom Integration (for custom POE instances)
-    return await this.makeCustomIntegration(prompt)
+    const data = await resp.json()
+    return { message: data.message || 'No response received', markdown: data.markdown }
   }
 
   /**
@@ -278,16 +320,18 @@ export const defaultPOEConfig: POEConfig = {
   apiKey: process.env.REACT_APP_POE_API_KEY || '', // Empty by default
   botId: process.env.REACT_APP_POE_BOT_ID || '', // Empty by default
   model: process.env.REACT_APP_POE_MODEL || 'claude-3-sonnet',
-  timeout: parseInt(process.env.REACT_APP_POE_TIMEOUT || '30000')
+  timeout: parseInt(process.env.REACT_APP_POE_TIMEOUT || '30000'),
+  backendUrl: process.env.REACT_APP_POE_BACKEND_URL || 'http://localhost:4000/api/poe/ask'
 }
 
 // Check if POE is properly configured
 export const isPOEConfigured = (): boolean => {
-  const isConfigured = !!(defaultPOEConfig.apiUrl && defaultPOEConfig.apiKey);
+  const isConfigured = !!defaultPOEConfig.backendUrl;
   console.log('POE Configuration Check:', {
     apiUrl: defaultPOEConfig.apiUrl,
     apiKey: defaultPOEConfig.apiKey ? '***configured***' : 'missing',
     botId: defaultPOEConfig.botId,
+    backendUrl: defaultPOEConfig.backendUrl ? '***configured***' : 'missing',
     isConfigured
   });
   return isConfigured;

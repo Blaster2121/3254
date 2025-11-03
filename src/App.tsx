@@ -19,7 +19,7 @@ function App() {
   return (
     <div className="app-container">
       <div className="app-header">
-        <h1>DocuSign</h1>
+        <h1>Law.Docx</h1>
         <div className="mode-switcher">
           <button 
             className={`mode-button ${mode === 'chat' ? 'active' : ''}`}
@@ -48,11 +48,24 @@ function App() {
             isLoading={chat.chatState.isLoading}
             error={chat.chatState.error}
             onClearError={chat.clearError}
+            // Auth UI
+            isAuthenticated={chat.isAuthenticated}
+            isEnvAuthenticated={chat.authSource === 'environment'}
+            showAuthPanel={chat.showAuthPanel}
+            authExpanded={chat.authExpanded}
+            toggleAuthExpanded={chat.toggleAuthExpanded}
+            openPoeSite={chat.openPoeSite}
+            manualCookies={chat.manualCookies}
+            onManualCookiesChange={chat.setManualCookies}
+            onSubmitManualCookies={chat.submitManualCookies}
+            onClearAuthentication={chat.openAuthPanel}
+            onCloseAuthPanel={chat.closeAuthPanel}
           />
           <ResultsPanel 
             analysisResult={chat.analysisResult}
             uploadedPDF={chat.uploadedPDF}
             leaseAnalysis={null}
+            markdownFullResult={chat.markdownFullResult}
           />
         </div>
       ) : (

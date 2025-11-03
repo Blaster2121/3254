@@ -11,7 +11,19 @@ export const useChat = () => {
     error: null
   })
   const [analysisResult, setAnalysisResult] = useState<ResultData | null>(null)
+  const [markdownFullResult, setMarkdownFullResult] = useState<string | null>(null)
+
   const [uploadedPDF, setUploadedPDF] = useState<UploadedPDF | null>(null)
+  // Lightweight auth UI state
+  const getLocalCookies = (): string | null => {
+    try { return localStorage.getItem('poe_cookies') } catch { return null }
+  }
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!getLocalCookies())
+  const [authSource, setAuthSource] = useState<'environment' | 'session' | 'none'>(getLocalCookies() ? 'session' : 'none')
+  const [showAuthPanel, setShowAuthPanel] = useState<boolean>(!isAuthenticated)
+  const [authExpanded, setAuthExpanded] = useState<boolean>(false)
+  const [userForcedAuthPanel, setUserForcedAuthPanel] = useState<boolean>(false)
+  const [manualCookies, setManualCookies] = useState<string>('')
   
   // Initialize POE service
   const poeService = createPOEService(defaultPOEConfig)
@@ -40,21 +52,23 @@ export const useChat = () => {
           previousMessages: messages.slice(-5) // Include last 5 messages for context
         }
 
-        // Send query to POE
+        // Send query to POE (backend first if configured)
         const poeResponse = await poeService.sendLegalQuery(context)
 
         if (poeResponse.success) {
           const assistantMessage: Message = { role: 'assistant', content: poeResponse.message }
           setMessages(prev => [...prev, assistantMessage])
+          setMarkdownFullResult(poeResponse.markdown || poeResponse.message)
 
           // Generate analysis result based on POE response
           const analysis: ResultData = {
-            summary: `Analysis of your query: "${currentInput}". ${poeResponse.message.substring(0, 200)}...`,
+            summary: poeResponse.message,
             keyPoints: extractKeyPoints(poeResponse.message),
             documentReferences: extractReferences(poeResponse.message),
             recommendations: extractRecommendations(poeResponse.message),
-            confidence: 0.85, // Higher confidence with POE
-            legalAreas: extractLegalAreas(poeResponse.message)
+            confidence: 0.95, // High confidence with POE
+            legalAreas: extractLegalAreas(poeResponse.message),
+            fullResponse: poeResponse.message // Store the complete response
           }
           setAnalysisResult(analysis)
         } else {
@@ -69,32 +83,23 @@ export const useChat = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred'
       
-      // Provide helpful mock response when POE is not configured
-      if (errorMessage === 'POE_NOT_CONFIGURED') {
+      // Provide helpful response when backend is not configured
+      if (errorMessage === 'POE_NOT_CONFIGURED' || errorMessage === 'BACKEND_NOT_CONFIGURED') {
         const mockResponse: Message = {
           role: 'assistant',
           content: `Thank you for your legal question: "${currentInput}".
 
-🤖 **POE Integration Status**: Currently using demo mode. To connect your POE chatbot:
+🤖 Backend integration is not configured yet. This app is set to use a local backend (no Poe API).
 
-1. **Configure POE API**: Add your POE credentials to the .env file
-2. **Restart the application**: Reload the page after configuration
-3. **Test the connection**: Try asking another legal question
+To enable it:
+1) In server/.env set POE_COOKIE_STRING to the full Cookie header from a logged-in poe.com tab and set POE_BOT_PATH=/Doccie
+2) Start the backend: cd server && npm install && npm run dev
+3) In the project .env set REACT_APP_POE_BACKEND_URL=http://localhost:4000/api/poe/ask and restart the app
 
-📋 **Current Features Available**:
-- ✅ PDF upload and lease analysis
-- ✅ Hong Kong tenancy agreement generation
-- ✅ Legal document risk assessment
-- 🔄 POE chatbot integration (pending configuration)
-
-For immediate legal assistance, please:
-- Upload your lease document for detailed analysis
-- Use the Lease Generation tool for tenancy agreements
-- Consult with a qualified attorney for specific advice
-
-Would you like help setting up the POE integration?`
+After that, send your question again and I will forward it to your Poe bot automatically.`
         }
         setMessages(prev => [...prev, mockResponse])
+        setMarkdownFullResult(mockResponse.content)
 
         // Generate mock analysis
         const mockAnalysis: ResultData = {
@@ -179,6 +184,105 @@ For detailed lease risk analysis, please visit our specialized POE bot: https://
     setChatState(prev => ({ ...prev, error: null }))
   }
 
+  // Auth UI handlers
+  const toggleAuthExpanded = () => setAuthExpanded(prev => !prev)
+  const openPoeSite = () => {
+    const url = 'https://poe.com/Doccie'
+    try { window.open(url, '_blank') } catch { window.location.href = url }
+  }
+  const submitManualCookies = () => {
+    const value = manualCookies.trim()
+    if (!value || !value.includes('=')) {
+      setChatState({ isLoading: false, error: 'Please paste a valid Cookie string.' })
+      return
+    }
+    try { localStorage.setItem('poe_cookies', value) } catch {}
+    setIsAuthenticated(true)
+    setAuthSource('session')
+    setShowAuthPanel(false)
+    setAuthExpanded(false)
+    setManualCookies('')
+    // Let the user know
+    const msg: Message = { role: 'assistant', content: '✓ Authentication successful. Cookies saved to your browser.' }
+    setMessages(prev => [...prev, msg])
+  }
+  const clearAuthentication = () => {
+    try { localStorage.removeItem('poe_cookies') } catch {}
+    setIsAuthenticated(false)
+    setAuthSource('none')
+    setShowAuthPanel(true)
+  }
+  // Refresh authentication: prioritize manual cookies; if present, show as authenticated
+  const refreshAuthentication = async () => {
+    const local = getLocalCookies()
+    if (local) {
+      setIsAuthenticated(true)
+      setAuthSource('session')
+      setShowAuthPanel(false)
+      return
+    }
+    try {
+      const backendUrl = defaultPOEConfig.backendUrl || 'http://localhost:4000/api/poe/ask'
+      const baseUrl = backendUrl.replace('/api/poe/ask', '')
+      const res = await fetch(`${baseUrl}/api/poe/status`)
+      if (res.ok) {
+        const status = await res.json()
+        setIsAuthenticated(!!status.authenticated)
+        setAuthSource(status.source || 'none')
+        setShowAuthPanel(!status.authenticated)
+      } else {
+        setIsAuthenticated(false)
+        setAuthSource('none')
+        setShowAuthPanel(true)
+      }
+    } catch {
+      setIsAuthenticated(false)
+      setAuthSource('none')
+      setShowAuthPanel(true)
+    }
+  }
+  const closeAuthPanel = () => {
+    setShowAuthPanel(false)
+  }
+  const openAuthPanel = () => {
+    setUserForcedAuthPanel(true)
+    setShowAuthPanel(true)
+  }
+
+  // On mount, check backend auth status to detect environment cookies
+  // If environment-based, mark authenticated and keep panel visible but collapsible
+  ;(async () => {
+    try {
+      const backendUrl = defaultPOEConfig.backendUrl || 'http://localhost:4000/api/poe/ask'
+      const baseUrl = backendUrl.replace('/api/poe/ask', '')
+      const res = await fetch(`${baseUrl}/api/poe/status`)
+      if (res.ok) {
+        const status = await res.json()
+        if (status.authenticated) {
+          setIsAuthenticated(true)
+          setAuthSource(status.source === 'environment' ? 'environment' : 'session')
+        } else {
+          setIsAuthenticated(!!getLocalCookies())
+          setAuthSource(getLocalCookies() ? 'session' : 'none')
+        }
+      } else {
+        setIsAuthenticated(!!getLocalCookies())
+        setAuthSource(getLocalCookies() ? 'session' : 'none')
+      }
+      // Auto-hide panel on initial render only if user hasn't explicitly opened it
+      if (!userForcedAuthPanel) {
+        const hasCookies = !!getLocalCookies() || authSource === 'environment'
+        setShowAuthPanel(!hasCookies)
+      }
+    } catch {
+      setIsAuthenticated(!!getLocalCookies())
+      setAuthSource(getLocalCookies() ? 'session' : 'none')
+      if (!userForcedAuthPanel) {
+        setShowAuthPanel(!getLocalCookies())
+      }
+    }
+  })()
+
   // Helper functions to extract structured data from POE responses
   const extractKeyPoints = (response: string): string[] => {
     const points: string[] = []
@@ -240,7 +344,22 @@ For detailed lease risk analysis, please visit our specialized POE bot: https://
     handleFileUpload,
     chatState,
     analysisResult,
+    markdownFullResult,
     uploadedPDF,
     clearError,
+    // Auth UI
+    isAuthenticated,
+    authSource,
+    showAuthPanel,
+    authExpanded,
+    toggleAuthExpanded,
+    openPoeSite,
+    manualCookies,
+    setManualCookies,
+    submitManualCookies,
+    clearAuthentication,
+    refreshAuthentication,
+    closeAuthPanel,
+    openAuthPanel,
   }
 }

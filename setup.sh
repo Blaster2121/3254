@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# DocuSign Legal Tools - Quick Setup Script
+# Law.Docx Legal Tools - Quick Setup Script
 # This script helps users quickly set up the legal tools application
 
-echo "🚀 DocuSign Legal Tools - Quick Setup"
+echo "🚀 Law.Docx Legal Tools - Quick Setup"
 echo "======================================"
 echo ""
 
