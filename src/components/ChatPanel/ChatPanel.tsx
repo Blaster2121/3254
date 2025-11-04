@@ -49,6 +49,13 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   onCloseAuthPanel,
 }) => {
   const [showInfo, setShowInfo] = useState(false)
+  const [isDisclaimerExpanded, setIsDisclaimerExpanded] = useState(() => {
+    try {
+      return localStorage.getItem('disclaimer_expanded') !== 'false'
+    } catch {
+      return true
+    }
+  })
   const [showDeploymentMessage, setShowDeploymentMessage] = useState(() => {
     try {
       return localStorage.getItem('hide_deployment_message') !== 'true'
@@ -71,6 +78,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     setShowDeploymentMessage(false)
   }
 
+  const toggleDisclaimer = () => {
+    const newState = !isDisclaimerExpanded
+    try {
+      localStorage.setItem('disclaimer_expanded', String(newState))
+    } catch {}
+    setIsDisclaimerExpanded(newState)
+  }
+
   const toggleDeploymentMessage = () => {
     const newState = !isDeploymentMessageExpanded
     try {
@@ -78,7 +93,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     } catch {}
     setIsDeploymentMessageExpanded(newState)
   }
-  
+
   const formatDisplayContent = (text: string): string => {
     if (!text) return text
     let out = text
@@ -110,7 +125,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
       <div style={{
         margin: '10px 10px 4px 10px',
-        padding: '12px 16px',
+        padding: isDisclaimerExpanded ? '12px 16px' : '4px 16px',
         background: '#fff3cd',
         border: '1px solid #ffc107',
         borderRadius: '6px',
@@ -118,12 +133,48 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         lineHeight: '1.5',
         color: '#856404'
       }}>
-        <strong>⚠️ Disclaimer:</strong> Nothing in this Tool is intended to be nor should be construed as legal advice. This is an educational project created by students. Please consult your lawyer for legal advice.
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={toggleDisclaimer}>
+          <strong>⚠️ Disclaimer:</strong>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleDisclaimer()
+            }}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#856404',
+              fontSize: '12px',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontWeight: 600,
+              opacity: 0.8
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1'
+              e.currentTarget.style.background = 'rgba(133, 100, 4, 0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.8'
+              e.currentTarget.style.background = 'transparent'
+            }}
+            aria-label={isDisclaimerExpanded ? "Hide disclaimer" : "Show disclaimer"}
+            title={isDisclaimerExpanded ? "Hide disclaimer" : "Show disclaimer"}
+          >
+            {isDisclaimerExpanded ? 'Hide' : 'Show'}
+          </button>
+        </div>
+        {isDisclaimerExpanded && (
+          <div style={{ marginTop: '8px' }}>
+            Nothing in this Tool is intended to be nor should be construed as legal advice. This is an educational project created by students. Please consult your lawyer for legal advice.
+          </div>
+        )}
       </div>
 
-       {showDeploymentMessage && (
+      {showDeploymentMessage && (
         <div style={{
-          margin: '10px',
+          margin: '4px 10px',
           padding: isDeploymentMessageExpanded ? '12px 16px' : '4px 16px',
           background: '#fff3cd',
           border: '1px solid #ffc107',
