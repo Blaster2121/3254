@@ -49,7 +49,21 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
   onCloseAuthPanel,
 }) => {
   const [showInfo, setShowInfo] = useState(false)
+  const [showDeploymentMessage, setShowDeploymentMessage] = useState(() => {
+    try {
+      return localStorage.getItem('hide_deployment_message') !== 'true'
+    } catch {
+      return true
+    }
+  })
 
+  const hideDeploymentMessage = () => {
+    try {
+      localStorage.setItem('hide_deployment_message', 'true')
+    } catch {}
+    setShowDeploymentMessage(false)
+  }
+  
   const formatDisplayContent = (text: string): string => {
     if (!text) return text
     let out = text
@@ -92,18 +106,54 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         <strong>⚠️ Disclaimer:</strong> Nothing in this Tool is intended to be nor should be construed as legal advice. This is an educational project created by students. Please consult your lawyer for legal advice.
       </div>
 
+     {showDeploymentMessage && (
         <div style={{
-        margin: '10px',
-        padding: '12px 16px',
-        background: '#fff3cd',
-        border: '1px solid #ffc107',
-        borderRadius: '6px',
-        fontSize: '12px',
-        lineHeight: '1.5',
-        color: '#856404'
-      }}>
-        The infrastructure and code we developed are fully capable of integrating our POE bot into this webpage, enabling users to interact with it directly in this chat space. This is demonstrated in our presentation video. However, due to budget constraints, we couldn't find suitable deployment tools that could deploy both the frontend and backend of our software. As a result, currently, the backend of the software is not deployed, and users cannot chat with our POE bot directly on our website. To try our POE legal bot, please visit <a href="https://poe.com/Doccie" target="_blank" rel="noreferrer" style={{ color: '#856404', textDecoration: 'underline' }}>https://poe.com/Doccie</a> directly.
-      </div>
+          margin: '10px',
+          padding: '12px 16px',
+          background: '#fff3cd',
+          border: '1px solid #ffc107',
+          borderRadius: '6px',
+          fontSize: '12px',
+          lineHeight: '1.5',
+          color: '#856404',
+          position: 'relative'
+        }}>
+          <button 
+            onClick={hideDeploymentMessage}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              background: 'transparent',
+              border: 'none',
+              color: '#856404',
+              fontSize: '18px',
+              cursor: 'pointer',
+              padding: '0',
+              width: '24px',
+              height: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              opacity: 0.7
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = '1'
+              e.currentTarget.style.background = 'rgba(133, 100, 4, 0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = '0.7'
+              e.currentTarget.style.background = 'transparent'
+            }}
+            aria-label="Hide message"
+            title="Hide message"
+          >
+            ×
+          </button>
+          The infrastructure and code we developed are fully capable of integrating our POE bot into this webpage, enabling users to interact with it directly in this chat space. This is demonstrated in our presenation video. However, due to budget constraints, we couldn't find suitable deployment tools that can deploy both the frontend and backend of our software. As a result, currently the backend of the software is not deployed and users cannot chat with our POE bot directly on our website. To try our POE legal bot, please visit <a href="https://poe.com/Doccie" target="_blank" rel="noreferrer" style={{ color: '#856404', textDecoration: 'underline' }}>https://poe.com/Doccie</a> directly.
+        </div>
+      )}
 
       {showAuthPanel && (
         <div className="auth-prompt-banner" style={{
