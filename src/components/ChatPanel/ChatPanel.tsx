@@ -56,12 +56,27 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       return true
     }
   })
+  const [isDeploymentMessageExpanded, setIsDeploymentMessageExpanded] = useState(() => {
+    try {
+      return localStorage.getItem('deployment_message_expanded') !== 'false'
+    } catch {
+      return true
+    }
+  })
 
   const hideDeploymentMessage = () => {
     try {
       localStorage.setItem('hide_deployment_message', 'true')
     } catch {}
     setShowDeploymentMessage(false)
+  }
+
+  const toggleDeploymentMessage = () => {
+    const newState = !isDeploymentMessageExpanded
+    try {
+      localStorage.setItem('deployment_message_expanded', String(newState))
+    } catch {}
+    setIsDeploymentMessageExpanded(newState)
   }
   
   const formatDisplayContent = (text: string): string => {
@@ -106,7 +121,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         <strong>⚠️ Disclaimer:</strong> Nothing in this Tool is intended to be nor should be construed as legal advice. This is an educational project created by students. Please consult your lawyer for legal advice.
       </div>
 
-     {showDeploymentMessage && (
+       {showDeploymentMessage && (
         <div style={{
           margin: '10px',
           padding: '12px 16px',
@@ -115,43 +130,45 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
           borderRadius: '6px',
           fontSize: '12px',
           lineHeight: '1.5',
-          color: '#856404',
-          position: 'relative'
+          color: '#856404'
         }}>
-          <button 
-            onClick={hideDeploymentMessage}
-            style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              background: 'transparent',
-              border: 'none',
-              color: '#856404',
-              fontSize: '18px',
-              cursor: 'pointer',
-              padding: '0',
-              width: '24px',
-              height: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              opacity: 0.7
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '1'
-              e.currentTarget.style.background = 'rgba(133, 100, 4, 0.1)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '0.7'
-              e.currentTarget.style.background = 'transparent'
-            }}
-            aria-label="Hide message"
-            title="Hide message"
-          >
-            ×
-          </button>
-          The infrastructure and code we developed are fully capable of integrating our POE bot into this webpage, enabling users to interact with it directly in this chat space. This is demonstrated in our presenation video. However, due to budget constraints, we couldn't find suitable deployment tools that can deploy both the frontend and backend of our software. As a result, currently the backend of the software is not deployed and users cannot chat with our POE bot directly on our website. To try our POE legal bot, please visit <a href="https://poe.com/Doccie" target="_blank" rel="noreferrer" style={{ color: '#856404', textDecoration: 'underline' }}>https://poe.com/Doccie</a> directly.
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={toggleDeploymentMessage}>
+            <strong>⚠️ Message:</strong>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleDeploymentMessage()
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#856404',
+                fontSize: '12px',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontWeight: 600,
+                opacity: 0.8
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '1'
+                e.currentTarget.style.background = 'rgba(133, 100, 4, 0.1)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '0.8'
+                e.currentTarget.style.background = 'transparent'
+              }}
+              aria-label={isDeploymentMessageExpanded ? "Hide message" : "Show message"}
+              title={isDeploymentMessageExpanded ? "Hide message" : "Show message"}
+            >
+              {isDeploymentMessageExpanded ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {isDeploymentMessageExpanded && (
+            <div style={{ marginTop: '8px' }}>
+              The infrastructure and code we developed are fully capable of integrating our POE bot into this webpage, enabling users to interact with it directly in this chat space. This is demonstrated in our presenation video. However, due to budget constraints, we couldn't find suitable deployment tools that can deploy both the frontend and backend of our software. As a result, currently the backend of the software is not deployed and users cannot chat with our POE bot directly on our website. To try our POE legal bot, please visit <a href="https://poe.com/Doccie" target="_blank" rel="noreferrer" style={{ color: '#856404', textDecoration: 'underline' }}>https://poe.com/Doccie</a> directly.
+            </div>
+          )}
         </div>
       )}
 
