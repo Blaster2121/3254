@@ -124,7 +124,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
        {showDeploymentMessage && (
         <div style={{
           margin: '10px',
-          padding: '12px 16px',
+          padding: isDeploymentMessageExpanded ? '12px 16px' : '4px 16px',
           background: '#fff3cd',
           border: '1px solid #ffc107',
           borderRadius: '6px',
