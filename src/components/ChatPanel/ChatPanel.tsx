@@ -92,6 +92,19 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
         <strong>⚠️ Disclaimer:</strong> Nothing in this Tool is intended to be nor should be construed as legal advice. This is an educational project created by students. Please consult your lawyer for legal advice.
       </div>
 
+        <div style={{
+        margin: '10px',
+        padding: '12px 16px',
+        background: '#fff3cd',
+        border: '1px solid #ffc107',
+        borderRadius: '6px',
+        fontSize: '12px',
+        lineHeight: '1.5',
+        color: '#856404'
+      }}>
+        The infrastructure and code we developed are fully capable of integrating our POE bot into this webpage, enabling users to interact with it directly in this chat space. This is demonstrated in our presentation video. However, due to budget constraints, we couldn't find suitable deployment tools that could deploy both the frontend and backend of our software. As a result, currently, the backend of the software is not deployed, and users cannot chat with our POE bot directly on our website. To try our POE legal bot, please visit <a href="https://poe.com/Doccie" target="_blank" rel="noreferrer" style={{ color: '#856404', textDecoration: 'underline' }}>https://poe.com/Doccie</a> directly.
+      </div>
+
       {showAuthPanel && (
         <div className="auth-prompt-banner" style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '12px 16px', margin: '10px', borderRadius: '8px'
