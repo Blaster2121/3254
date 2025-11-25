@@ -25,13 +25,13 @@ function App() {
             className={`mode-button ${mode === 'chat' ? 'active' : ''}`}
             onClick={() => setMode('chat')}
           >
-            Tenant (Legal Chat)
+            Tenant & Landlord (Legal Chat)
           </button>
           <button 
             className={`mode-button ${mode === 'lease' ? 'active' : ''}`}
             onClick={() => setMode('lease')}
           >
-            Landlord (Lease Generation)
+            Landlord & Real Estate Agent (Lease Generation)
           </button>
         </div>
       </div>
