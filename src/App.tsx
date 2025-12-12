@@ -13,7 +13,7 @@ function App() {
 
   const handleLeaseComplete = (data: CLICLeaseData) => {
     // Show success message or redirect
-    alert('Lease agreement generated successfully! Check your downloads folder.')
+    alert('Lease agreement generated successfully! Please check your downloads folder. Please review the document for accuracy and consult your lawyer for legal advice.')
   }
 
   return (
