@@ -127,6 +127,57 @@ const LeaseForm: React.FC<LeaseFormProps> = ({ onComplete }) => {
           </select>
         )
       
+            case 'date-day':
+        const days = Array.from({ length: 31 }, (_, i) => i + 1)
+        return (
+          <select
+            {...register(fieldName, { 
+              required: field.required ? `${field.label} is required` : false 
+            })}
+            className={`form-select ${errors[fieldName] ? 'error' : ''}`}
+          >
+            <option value="">Select day</option>
+            {days.map(day => (
+              <option key={day} value={day.toString()}>{day}</option>
+            ))}
+          </select>
+        )
+      
+      case 'date-month':
+        const months = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ]
+        return (
+          <select
+            {...register(fieldName, { 
+              required: field.required ? `${field.label} is required` : false 
+            })}
+            className={`form-select ${errors[fieldName] ? 'error' : ''}`}
+          >
+            <option value="">Select month</option>
+            {months.map(month => (
+              <option key={month} value={month}>{month}</option>
+            ))}
+          </select>
+        )
+      
+      case 'date-year':
+        const years = Array.from({ length: 31 }, (_, i) => 2020 + i) // 2020 to 2050
+        return (
+          <select
+            {...register(fieldName, { 
+              required: field.required ? `${field.label} is required` : false 
+            })}
+            className={`form-select ${errors[fieldName] ? 'error' : ''}`}
+          >
+            <option value="">Select year</option>
+            {years.map(year => (
+              <option key={year} value={year.toString()}>{year}</option>
+            ))}
+          </select>
+        )
+
       case 'checkbox':
         return (
           <div className="checkbox-group">
