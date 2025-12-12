@@ -1,5 +1,5 @@
 .chat-panel {
-  flex: 1;
+  flex: 2;
   display: flex;
   flex-direction: column;
   background-color: #f5f5f5;
