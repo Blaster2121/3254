@@ -2,7 +2,7 @@
 export interface CLICField {
   id: string
   label: string
-  type: 'text' | 'date' | 'number' | 'currency' | 'select' | 'textarea' | 'checkbox'
+  type: 'text' | 'date' | 'number' | 'currency' | 'select' | 'textarea' | 'checkbox' | 'date-day' | 'date-month' | 'date-year'
   required: boolean
   placeholder?: string
   options?: string[]
@@ -69,7 +69,7 @@ export const CLIC_TEMPLATE_FIELDS: CLICField[] = [
   {
     id: 'agreementDay',
     label: 'Agreement Day',
-    type: 'number',
+    type: 'date-day',
     required: true,
     placeholder: 'e.g., 15',
     description: 'Day of the month when agreement is signed',
@@ -78,7 +78,7 @@ export const CLIC_TEMPLATE_FIELDS: CLICField[] = [
   {
     id: 'agreementMonth',
     label: 'Agreement Month',
-    type: 'text',
+    type: 'date-month',
     required: true,
     placeholder: 'e.g., January',
     description: 'Month when agreement is signed',
@@ -87,7 +87,7 @@ export const CLIC_TEMPLATE_FIELDS: CLICField[] = [
   {
     id: 'agreementYear',
     label: 'Agreement Year',
-    type: 'number',
+    type: 'date-year',
     required: true,
     placeholder: 'e.g., 2024',
     description: 'Year when agreement is signed',
