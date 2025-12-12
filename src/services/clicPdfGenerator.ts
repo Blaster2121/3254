@@ -231,55 +231,80 @@ function generatePDFClientSide(data: CLICLeaseData): void {
     }
   }
 
-  // Cover page - content in right top corner with centered text
+  // Cover page - content centered on page
   doc.setFontSize(fontSize)
   doc.setFont('helvetica', 'normal')
   
-  // Start from top, offset to right (matching LaTeX \hspace{6cm})
-  yPos = topMargin + 40 // Start near top (topMargin + small offset)
-  const hSpace6cm = cmToPt(6) // 170.1 points - offset to right
-  const contentCenterX = leftMargin + hSpace6cm + (cmToPt(10) / 2) // Center point for content block (6cm + 5cm)
+  // Center content both horizontally and vertically on the page
+  const contentCenterX = pageWidth / 2 // Center of page horizontally
+  const hSpace10cm = cmToPt(10) // 283.5 points - width of content block
+  const lineX = contentCenterX - (hSpace10cm / 2)
   
-  // Dated the... (centered in content block)
+  // Calculate total height of content to center vertically
   const dateText = `Dated the ${data.agreementDay} day of ${data.agreementMonth} of ${data.agreementYear}`
+  const addrLines = doc.splitTextToSize(data.landlordAddress, hSpace10cm)
+  const totalContentHeight = 
+    emToPt(3) + // space before first line
+    lineHeight + // date text
+    emToPt(3) + // space after date
+    2 + // line height
+    emToPt(3) + // space after first line
+    lineHeight + // landlord name
+    emToPt(1) + // space after landlord name
+    lineHeight + // AND
+    emToPt(1) + // space after AND
+    lineHeight + // tenant name
+    emToPt(3) + // space after tenant name
+    2 + // second line height
+    emToPt(3) + // space after second line
+    lineHeight + // TENANCY AGREEMENT
+    emToPt(1) + // space after title
+    lineHeight + // In respect of
+    emToPt(1) + // space after "In respect of"
+    (addrLines.length * lineHeight) + // address lines
+    lineHeight + // ("the Premises")
+    emToPt(3) + // space before last line
+    2 // last line height
+  
+  // Start from vertical center minus half content height
+  yPos = (pageHeight / 2) - (totalContentHeight / 2)
+  
+  // Dated the... (centered on page)
   doc.text(dateText, contentCenterX, yPos, { align: 'center' })
   addSpace(emToPt(3)) // \vspace{3em} = 36 points
   
-  // Horizontal line (centered in content block, ~10cm wide)
-  const hSpace10cm = cmToPt(10) // 283.5 points
-  const lineX = contentCenterX - (hSpace10cm / 2)
+  // Horizontal line (centered on page, ~10cm wide)
   drawLine(lineX, yPos, hSpace10cm)
   addSpace(emToPt(3)) // Large space after line
   
-  // \textbf{landlordName} (centered in content block)
+  // \textbf{landlordName} (centered on page)
   doc.setFont('helvetica', 'bold')
   doc.text(data.landlordName, contentCenterX, yPos, { align: 'center' })
   addSpace(emToPt(1)) // \vspace{1em} = 12 points
   
-  // AND (centered in content block)
+  // AND (centered on page)
   doc.setFont('helvetica', 'normal')
   doc.text('AND', contentCenterX, yPos, { align: 'center' })
   addSpace(emToPt(1)) // \vspace{1em}
   
-  // \textbf{tenantName} (centered in content block)
+  // \textbf{tenantName} (centered on page)
   doc.setFont('helvetica', 'bold')
   doc.text(data.tenantName, contentCenterX, yPos, { align: 'center' })
   addSpace(emToPt(3)) // \vspace{3em}
   
-  // Horizontal line (centered in content block)
+  // Horizontal line (centered on page)
   drawLine(lineX, yPos, hSpace10cm)
   addSpace(emToPt(3)) // Large space after line
   
-  // \textbf{TENANCY AGREEMENT} (centered in content block)
+  // \textbf{TENANCY AGREEMENT} (centered on page)
   doc.text('TENANCY AGREEMENT', contentCenterX, yPos, { align: 'center' })
   addSpace(emToPt(1)) // \vspace{1em}
   
-  // \textbf{In respect of} (centered in content block)
+  // \textbf{In respect of} (centered on page)
   doc.text('In respect of', contentCenterX, yPos, { align: 'center' })
   addSpace(emToPt(1)) // \vspace{1em}
   
-  // \textbf{landlordAddress} (centered in content block, may wrap)
-  const addrLines = doc.splitTextToSize(data.landlordAddress, hSpace10cm)
+  // \textbf{landlordAddress} (centered on page, may wrap)
   addrLines.forEach((line: string) => {
     doc.text(line, contentCenterX, yPos, { align: 'center' })
     addSpace(lineHeight)
@@ -287,11 +312,11 @@ function generatePDFClientSide(data: CLICLeaseData): void {
   yPos -= lineHeight // Adjust back one line
   addSpace(lineHeight)
   
-  // \textbf{("the Premises")} (centered in content block)
+  // \textbf{("the Premises")} (centered on page)
   doc.text('("the Premises")', contentCenterX, yPos, { align: 'center' })
   addSpace(emToPt(3)) // \vspace{3em}
   
-  // Horizontal line (centered in content block)
+  // Horizontal line (centered on page)
   drawLine(lineX, yPos, hSpace10cm)
 
   // PAGE 2: Main agreement (\newpage)
